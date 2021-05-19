@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(robot_arm_3Dscan)
 
+add_subdirectory(pcl_filters)
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -15,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf2
   tf2_ros
-  robot_arm_tools
+  pcl_filters
 )
 
 ## System dependencies are found with CMake's conventions
@@ -108,9 +110,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES robot_arm_3Dscan
-#  CATKIN_DEPENDS laser_geometry pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros
+  CATKIN_DEPENDS laser_geometry pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros pcl_filters
 #  DEPENDS system_lib
 )
 
@@ -121,7 +123,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -138,7 +140,9 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/robot_arm_3Dscan_node.cpp)
+add_executable(RTABMAP_node src/RTABMAP_node.cpp src/RTABMAPServer.cpp src/MeasureServer.cpp)
+
+add_executable(ICP_filtering_node src/ICP_filtering_node.cpp src/PointCloudServer.cpp src/MeasureServer.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,9 +155,14 @@ include_directories(
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(RTABMAP_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(ICP_filtering_node
+  ${catkin_LIBRARIES}
+  pcl_filters
+)
 
 #############
 ## Install ##
