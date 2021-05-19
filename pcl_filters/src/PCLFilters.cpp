@@ -154,11 +154,11 @@ void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
 {
     //Radius outliers removal => Remove points which do not have at least some number of neighbours within a certain range
     pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> radiusFilter;
-    statisticalFilter.setInputCloud(pointCloud);
-    statisticalFilter.setRadiusSearch(0.01);
-    statisticalFilter.setMinNeighborsInRadius(10);
-    statisticalFilter.setKeepOrganized(true);
-    statisticalFilter.filter(*pointCloud);
+    radiusFilter.setInputCloud(pointCloud);
+    radiusFilter.setRadiusSearch(0.01);
+    radiusFilter.setMinNeighborsInRadius(10);
+    radiusFilter.setKeepOrganized(true);
+    radiusFilter.filter(*pointCloud);
 }
 
 void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, double minG, double minB, double maxR, double maxG, double maxB)
