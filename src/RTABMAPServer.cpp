@@ -1,6 +1,6 @@
 #include "robot_arm_3Dscan/RTABMAPServer.h"
 
-RTABMAPServer::RTABMAPServer():MeasureServer("/RTABMAP_server")
+RTABMAPServer::RTABMAPServer():MeasurementServer("/RTABMAP_server")
 {
     m_pause = m_nodeHandle.serviceClient<std_srvs::Empty>("RTABMAP/pause");
     m_resume = m_nodeHandle.serviceClient<std_srvs::Empty>("RTABMAP/resume");
@@ -38,4 +38,19 @@ bool RTABMAPServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::Resp
     }
 
     return(true);
+}
+
+int main(int argc, char *argv[])
+{
+    //ROS node initialisation
+    ros::init(argc, argv, "RTABMAP_server_node");  
+    ros::AsyncSpinner spinner(0);
+    spinner.start();
+    ros::WallDuration(1.0).sleep();
+
+    //RTABMAP measure service initialisation
+    RTABMAPServer RTABMAPServer;
+
+    ros::waitForShutdown();
+    return 0;
 }

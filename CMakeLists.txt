@@ -140,9 +140,9 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(RTABMAP_node src/RTABMAP_node.cpp src/RTABMAPServer.cpp src/MeasureServer.cpp)
+add_executable(RTABMAP_node src/RTABMAP_node.cpp src/RTABMAPServer.cpp src/MeasurementServer.cpp)
 
-add_executable(ICP_filtering_node src/ICP_filtering_node.cpp src/PointCloudServer.cpp src/MeasureServer.cpp)
+add_executable(ICP_filtering_node src/ICP_filtering_node.cpp src/PointCloudServer.cpp src/MeasurementServer.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

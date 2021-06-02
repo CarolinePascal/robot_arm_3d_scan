@@ -48,7 +48,7 @@ class ICPProcessing:
         self.estimatedGlobalTransform = np.identity(4)
 
         ##Point clouds storage folders
-        self.storageFolder = "/tmp/PointClouds/"
+        self.storageFolder = "/tmp/3DScan/"
         
         try:
             os.mkdir(self.storageFolder)
@@ -143,7 +143,7 @@ def main():
     """
 
     #Initialise node
-    rospy.init_node('ICP_Node')
+    rospy.init_node('ICP_processing_node')
 
     #Create an ICPProcessing object
     ICPProcessing()

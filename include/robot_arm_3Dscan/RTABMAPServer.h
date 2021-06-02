@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include "robot_arm_3Dscan/MeasureServer.h"
+#include "measurement_tools/MeasurementServer.h"
 
  /*! \class RTABMAPServer
   * \brief Class used to trigger RTABMAP measurements
   */
-class RTABMAPServer : public MeasureServer
+class RTABMAPServer : public MeasurementServer
 {
     public:
         /*!

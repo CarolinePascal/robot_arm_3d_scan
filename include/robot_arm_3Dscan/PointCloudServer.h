@@ -9,20 +9,20 @@
 #pragma once
 
 #include <functional>
-#include "robot_arm_3Dscan/MeasureServer.h"
+#include "measurement_tools/MeasurementServer.h"
 #include "pcl_filters/PCLFilters.h"
 
  /*! \class PointCloudServer
   * \brief Class used to trigger point cloud measurements
   */
-class PointCloudServer : public MeasureServer
+class PointCloudServer : public MeasurementServer
 {
     public:
         /*!
          *  \brief Constructor
          *  \param rawPointCloudTopic The name of the ROS topic on which raw point clouds are published
          */
-        PointCloudServer(std::string rawPointCloudTopic);
+        PointCloudServer(std::string rawPointCloudTopic, std::string pointCloudServerName, std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter = emptyPCLFilter);
 
         /*!
          *  \brief Destructor
@@ -37,7 +37,7 @@ class PointCloudServer : public MeasureServer
         /*! 
          * \brief Adds a PCL filter to the point cloud measurement server
          */
-        void addFilter(std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter);
+        void setFilter(std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter);
 
     private:
 
