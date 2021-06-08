@@ -1,10 +1,8 @@
 #include "robot_arm_3Dscan/PointCloudServer.h"
 
-void emptyPCLFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud){};
-
-PointCloudServer::PointCloudServer(std::string rawPointCloudTopic, std::string pointCloudServerName, std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter):MeasurementServer(pointCloudServerName), m_rawPointCloudTopic(rawPointCloudTopic), m_pointCloudFilter(pointCloudFilter)
+PointCloudServer::PointCloudServer(std::string rawPointCloudTopic, std::string filteredPointCloudTopic, std::string pointCloudServerName, std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter):MeasurementServer(pointCloudServerName), m_rawPointCloudTopic(rawPointCloudTopic), m_pointCloudFilter(pointCloudFilter)
 {
-    m_pointCloudPublisher = m_nodeHandle.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("/filtered_point_cloud",10);
+    m_pointCloudPublisher = m_nodeHandle.advertise<pcl::PointCloud<pcl::PointXYZRGB>>(filteredPointCloudTopic,10);
 }
 
 bool PointCloudServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)

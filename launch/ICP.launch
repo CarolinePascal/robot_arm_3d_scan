@@ -1,13 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
+    <node pkg="robot_arm_3Dscan" type="ICPServer" name="icp_server" output="screen"/>
 
-    <arg name="tool" default="camera"/>
-
-    <include file="$(find robot_arm_3Dscan)/launch/Setup.launch">
-        <arg name="tool" value="$(arg tool)"/>
-	</include>
-
-    <node pkg="robot_arm_3Dscan" type="ICP_filtering_node" name="ICP_filtering_node" output="screen"/>
-	<node pkg="robot_arm_3Dscan" type="ICPProcessing.py" name="ICP_processing_node" output="screen"/>
-
+	<node pkg="robot_arm_3Dscan" type="ICPProcessing.py" name="icp_processing" output="screen"/>
 </launch>

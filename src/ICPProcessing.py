@@ -10,6 +10,8 @@ import open3d as o3d
 from open3d_ros_helper import open3d_ros_helper as orh
 import pcl as pcl
 
+import os
+
 from std_msgs.msg import Int64
 from geometry_msgs.msg import Vector3
 from sensor_msgs.msg import PointCloud2
@@ -34,7 +36,7 @@ class ICPProcessing:
         """
 
         ##Point cloud subscriber
-        self.pointCloudSubscriber = rospy.Subscriber("/filtered_point_cloud",PointCloud2,self.callback,queue_size=100)
+        self.pointCloudSubscriber = rospy.Subscriber("/icp_filtered_point_cloud",PointCloud2,self.callback,queue_size=100)
 
         ##Counter
         self.pointCloudCounter = 0
@@ -48,7 +50,7 @@ class ICPProcessing:
         self.estimatedGlobalTransform = np.identity(4)
 
         ##Point clouds storage folders
-        self.storageFolder = "/tmp/3DScan/"
+        self.storageFolder = "/tmp/3DScanMeasurements/"
         
         try:
             os.mkdir(self.storageFolder)
@@ -143,7 +145,7 @@ def main():
     """
 
     #Initialise node
-    rospy.init_node('ICP_processing_node')
+    rospy.init_node('icp_processing')
 
     #Create an ICPProcessing object
     ICPProcessing()
@@ -153,10 +155,10 @@ def main():
         try:
             rospy.spin()
         except KeyboardInterrupt:
-            print("Shutting down ROS ICP_Node")
+            print("Shutting down ROS ICP processing")
             break
         except ICPProcessing.thresholdExeededError:
-            print("Shutting down ROS ICP_Node")
+            print("Shutting down ROS ICP processing")
             break
 
 if __name__ == "__main__":

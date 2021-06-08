@@ -1,12 +1,5 @@
 <?xml version="1.0" ?>
 <launch>
-
-    <arg name="tool" default="camera"/>
-
-    <include file="$(find robot_arm_3Dscan)/launch/Setup.launch">
-        <arg name="tool" value="$(arg tool)"/>
-	</include>
-
 	<arg name="rgb_topic"         default="/camera/color/image_raw"/>
 	<arg name="depth_topic"       default="/camera/aligned_depth_to_color/image_raw"/>
 	<arg name="camera_info_topic" default="/camera/color/camera_info"/>
@@ -43,6 +36,5 @@
 		</node>
 	</group>
     
-    <node pkg="robot_arm_3Dscan" type="RTABMAP_node" name="RTABMAP_node" output="screen"/>
-
+    <node pkg="robot_arm_3Dscan" type="RTABMAPServer" name="rtabmap_server" output="screen"/>
 </launch>

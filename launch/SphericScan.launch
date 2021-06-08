@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<launch>
+    <arg name="tool" default="camera"/>
+    <arg name="method" default="icp"/>
+
+    <group if="$(eval arg('tool') == 'camera')">
+        <include file="$(find robot_arm_3Dscan)/launch/SetupRealSense.launch"/>
+    </group>
+    
+    <group if="$(eval arg('method') == 'icp')">
+        <include file="$(find robot_arm_3Dscan)/launch/ICP.launch"/>
+    </group>
+
+    <group if="$(eval arg('method') == 'rtabmap' and arg('tool') == 'camera')">
+        <include file="$(find robot_arm_3Dscan)/launch/RTABMAP.launch"/>
+    </group>
+
+    <node pkg="robot_arm_3Dscan" type="robot_arm_3Dscan_spheric_scan" name="robot_arm_3Dscan_spheric_scan" output="screen" args="$(arg tool) /$(arg method)_server"/>
+
+</launch>

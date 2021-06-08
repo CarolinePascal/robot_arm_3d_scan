@@ -9,13 +9,13 @@ void ICPPointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
 int main(int argc, char *argv[])
 {
     //ROS node initialisation
-    ros::init(argc, argv, "ICP_point_cloud_server_node");  
+    ros::init(argc, argv, "icp_server");  
     ros::AsyncSpinner spinner(0);
     spinner.start();
     ros::WallDuration(1.0).sleep();
 
     //RTABMAP measure service initialisation
-    PointCloudServer ICPPointCloudServer("/camera/depth/color/points","/ICP_point_cloud_server",ICPPointCloudFilter);
+    PointCloudServer ICPServer("/camera/depth/color/points","/icp_filtered_point_cloud","/icp_server",ICPPointCloudFilter);
 
     ros::waitForShutdown();
     return 0;

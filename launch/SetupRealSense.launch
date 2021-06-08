@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<launch>
+
+	<arg name="realsense_json_file_path" default="$(find robot_arm_3Dscan)/config/camera/ShortRangePreset.json"/>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0043 0 -1.57 3.14 panda_camera camera_link" />
+    
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="align_depth" value="true"/>
+        <arg name="filters" value="pointcloud,temporal,decimation,disparity"/>
+        <arg name="realsense_json_file_path" value="$(arg realsense_json_file_path)"/>
+    </include>
+
+</launch>
