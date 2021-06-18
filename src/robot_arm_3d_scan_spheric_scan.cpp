@@ -15,7 +15,7 @@
 int main(int argc, char **argv)
 {
     //ROS node initialisation
-    ros::init(argc, argv, "robot_arm_3Dscan_spheric_scan_node");  
+    ros::init(argc, argv, "robot_arm_3d_scan_spheric_scan_node");  
     ros::AsyncSpinner spinner(0);
     spinner.start();
     ros::WallDuration(1.0).sleep();
@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     //Command line arguments handling
     if(argc < 3)
     {
-        throw std::invalid_argument("MISSING CMD LINE ARGUMENT FOR robot_arm_3Dscan_spheric_scan_node !");
+        throw std::invalid_argument("MISSING CMD LINE ARGUMENT FOR robot_arm_3d_scan_spheric_scan_node !");
         return(1);
     }
 
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
     
     sphericInclinationTrajectory(centerPose, radiusTrajectory, M_PI/6, 0, 2*M_PI, N, waypoints); 
     
-    robot.runMeasurementRountine(waypoints,argv[2],"/tmp/3DScanMeasurements/Positions.csv");
+    robot.runMeasurementRountine(waypoints,argv[2],"/tmp/3d_ScanMeasurements/Positions.csv");
 
     //Shut down ROS node
     robot.init();   

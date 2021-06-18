@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "measurement_tools/MeasurementServer.h"
+#include "robot_arm_tools/MeasurementServer.h"
 
  /*! \class RTABMAPServer
   * \brief Class used to trigger RTABMAP measurements

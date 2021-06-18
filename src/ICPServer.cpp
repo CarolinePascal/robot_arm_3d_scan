@@ -1,4 +1,4 @@
-#include "robot_arm_3Dscan/PointCloudServer.h"
+#include "robot_arm_3d_scan/PointCloudServer.h"
 
 void ICPPointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
 {

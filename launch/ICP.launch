@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
-    <node pkg="robot_arm_3Dscan" type="ICPServer" name="icp_server" output="screen"/>
+    <node pkg="robot_arm_3d_scan" type="ICPServer" name="icp_server" output="screen"/>
 
-	<node pkg="robot_arm_3Dscan" type="ICPProcessing.py" name="icp_processing" output="screen"/>
+	<node pkg="robot_arm_3d_scan" type="ICPProcessing.py" name="icp_processing" output="screen"/>
 </launch>

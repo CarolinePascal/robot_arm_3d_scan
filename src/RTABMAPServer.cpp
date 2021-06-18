@@ -1,4 +1,4 @@
-#include "robot_arm_3Dscan/RTABMAPServer.h"
+#include "robot_arm_3d_scan/RTABMAPServer.h"
 
 RTABMAPServer::RTABMAPServer():MeasurementServer("/rtabmap_server")
 {

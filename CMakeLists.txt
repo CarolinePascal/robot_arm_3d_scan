@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(robot_arm_3Dscan)
+project(robot_arm_3d_scan)
 
 add_subdirectory(pcl_filters)
 
@@ -19,7 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   pcl_filters
   robot_arm_tools
-  measurement_tools
 )
 
 ## System dependencies are found with CMake's conventions
@@ -113,8 +112,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES robot_arm_3Dscan
-  CATKIN_DEPENDS laser_geometry pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros pcl_filters robot_arm_tools measurement_tools
+#  LIBRARIES robot_arm_3d_scan
+  CATKIN_DEPENDS laser_geometry pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros pcl_filters robot_arm_tools
 #  DEPENDS system_lib
 )
 
@@ -131,7 +130,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/robot_arm_3Dscan.cpp
+#   src/${PROJECT_NAME}/robot_arm_3d_scan.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -142,7 +141,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_spheric_scan_node src/robot_arm_3Dscan_spheric_scan.cpp)
+add_executable(${PROJECT_NAME}_spheric_scan_node src/robot_arm_3d_scan_spheric_scan.cpp)
 
 add_executable(rtabmap_server src/RTABMAPServer.cpp)
 
@@ -218,7 +217,7 @@ target_link_libraries(icp_server
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_robot_arm_3Dscan.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_robot_arm_3d_scan.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

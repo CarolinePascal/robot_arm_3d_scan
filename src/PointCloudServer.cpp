@@ -1,4 +1,4 @@
-#include "robot_arm_3Dscan/PointCloudServer.h"
+#include "robot_arm_3d_scan/PointCloudServer.h"
 
 PointCloudServer::PointCloudServer(std::string rawPointCloudTopic, std::string filteredPointCloudTopic, std::string pointCloudServerName, std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter):MeasurementServer(pointCloudServerName), m_rawPointCloudTopic(rawPointCloudTopic), m_pointCloudFilter(pointCloudFilter)
 {

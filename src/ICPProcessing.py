@@ -50,7 +50,7 @@ class ICPProcessing:
         self.estimatedGlobalTransform = np.identity(4)
 
         ##Point clouds storage folders
-        self.storageFolder = "/tmp/3DScanMeasurements/"
+        self.storageFolder = "/tmp/3d_ScanMeasurements/"
         
         try:
             os.mkdir(self.storageFolder)

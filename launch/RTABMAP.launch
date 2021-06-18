@@ -36,5 +36,5 @@
 		</node>
 	</group>
     
-    <node pkg="robot_arm_3Dscan" type="RTABMAPServer" name="rtabmap_server" output="screen"/>
+    <node pkg="robot_arm_3d_scan" type="RTABMAPServer" name="rtabmap_server" output="screen"/>
 </launch>
