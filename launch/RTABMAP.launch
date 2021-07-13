@@ -1,5 +1,10 @@
 <?xml version="1.0" ?>
 <launch>
+
+	<!-- MEASUREMENT SERVER -->
+    <node pkg="robot_arm_3d_scan" type="RTABMAPServer" name="rtabmap_server" output="screen"/>
+
+	<!-- RTABMAP PROCESSING -->
 	<arg name="rgb_topic"         default="/camera/color/image_raw"/>
 	<arg name="depth_topic"       default="/camera/aligned_depth_to_color/image_raw"/>
 	<arg name="camera_info_topic" default="/camera/color/camera_info"/>
@@ -35,6 +40,5 @@
 
 		</node>
 	</group>
-    
-    <node pkg="robot_arm_3d_scan" type="RTABMAPServer" name="rtabmap_server" output="screen"/>
+
 </launch>

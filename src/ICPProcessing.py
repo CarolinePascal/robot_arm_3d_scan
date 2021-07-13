@@ -1,6 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-#Imports
+## Definition file of the ICPProcessing class 
+#
+# Defines the attributes and methods used to perform ICP over successive point clouds
+
+
 import rospy
 import numpy as np
 import copy
@@ -17,41 +21,39 @@ from geometry_msgs.msg import Vector3
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Transform
 
+## ICPProcessing
+#
+# Defines the attributes and methods used to perform ICP over successive point clouds.
 class ICPProcessing:
-    """! ICPProcessing class
-    Defines the class used to perform ICP over successive point clouds.
-    """
 
+    ## thresholdExceptionError
+    #
+    # Defines the exception class triggered when the ICP leads to an invalid transform.
     class thresholdExeededError(Exception):
-        """! thresholdExeededError exception class
-        Defines the exception class triggered when the ICP leads to an invalid transform.
-        """
+
+        ## Constructor
         def __init__(self):
-            """! thresholdExeededError class initializer.
-            """
             super(ICPProcessing.thresholdExeededError, self).__init__("INVALID TRANSFORM - INCREASE WAYPOINTS NUMBER")
 
+    ## Constructor
     def __init__(self):
-        """! The ICPProcessing class constructor.
-        """
 
-        ##Point cloud subscriber
+        ## Point clouds ROS subscriber
         self.pointCloudSubscriber = rospy.Subscriber("/icp_filtered_point_cloud",PointCloud2,self.callback,queue_size=100)
 
-        ##Counter
+        ## Point cloud counter
         self.pointCloudCounter = 0
 
-        ##Transform thresholds
+        ## Transform thresholds
         self.maxRotation = 30*np.pi/180
         self.maxTranslation = 0.5
 
-        ##Estimated tranformation
+        ## Estimated tranformations
         self.estimatedLocalTransform = np.identity(4)
         self.estimatedGlobalTransform = np.identity(4)
 
-        ##Point clouds storage folders
-        self.storageFolder = "/tmp/3d_ScanMeasurements/"
-        
+        ## Storage folder name
+        self.storageFolder = rospy.get_param("storageFolderName")
         try:
             os.mkdir(self.storageFolder)
             rospy.loginfo("The folder " + self.storageFolder + "was created")
@@ -59,10 +61,10 @@ class ICPProcessing:
             rospy.logwarn("The folder " + self.storageFolder + "already exists : its contents will be ereased !")
             pass 
 
+    ## Callback method performing ICP on the recieved point clouds
+    #  @param pointCloud The last received point cloud
     def callback(self, pointCloud):
-        """! Callback function for the filtered point cloud topic
-        @param pointCloud The recieved point cloud
-        """
+
         self.pointCloudCounter += 1
 
         #Store recieved point cloud
@@ -104,9 +106,8 @@ class ICPProcessing:
     
         return()
 
+    ## Method estimating the transformation between the two last received point clouds using the ICP method
     def ICP(self):
-        """! Estimates the transform between the two last recieved point clouds using the IPC method
-        """
 
         #Create copies...
         sourcePointCloud = copy.deepcopy(self.currentPointCloud)
@@ -141,16 +142,13 @@ class ICPProcessing:
             return(ICPTransformation)
 
 def main():
-    """! Main function - ROS node
-    """
 
-    #Initialise node
+    #Launch ROS node
     rospy.init_node('icp_processing')
 
-    #Create an ICPProcessing object
+    #Launch ROS subscriber
     ICPProcessing()
 
-    #Check for keyboard interrupt or invalid transforms
     while not rospy.is_shutdown():
         try:
             rospy.spin()

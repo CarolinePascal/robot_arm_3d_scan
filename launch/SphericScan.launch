@@ -1,12 +1,17 @@
 <?xml version="1.0" ?>
 <launch>
+
+    <!-- GENERAL ARGUMENTS-->
+    <arg name="robot" default="panda"/>
     <arg name="tool" default="camera"/>
     <arg name="method" default="icp"/>
 
+    <!-- TOOL SETUP -->
     <group if="$(eval arg('tool') == 'camera')">
         <include file="$(find robot_arm_3d_scan)/launch/SetupRealSense.launch"/>
     </group>
     
+    <!-- SCANNING METHOD SETUP -->
     <group if="$(eval arg('method') == 'icp')">
         <include file="$(find robot_arm_3d_scan)/launch/ICP.launch"/>
     </group>
@@ -15,6 +20,11 @@
         <include file="$(find robot_arm_3d_scan)/launch/RTABMAP.launch"/>
     </group>
 
-    <node pkg="robot_arm_3d_scan" type="robot_arm_3d_scan_spheric_scan" name="robot_arm_3d_scan_spheric_scan" output="screen" args="$(arg tool) /$(arg method)_server"/>
+    <!-- MAIN NODE -->
+    <node pkg="robot_arm_3d_scan" type="robot_arm_3d_scan_spheric_scan" name="robot_arm_3d_scan_spheric_scan" output="screen">
+        <param name="measurementServer" value="/$(arg method)_server"/>
+        <param name="storageFolder" value="/tmp/SphericScan_$(arg method)/"/>
+		<rosparam command="load" file="$(find robot_3d_scan)/config/AcquisitionParameters.yaml"/>
+    </node>
 
 </launch>

@@ -44,13 +44,10 @@ int main(int argc, char *argv[])
 {
     //ROS node initialisation
     ros::init(argc, argv, "rtabmap_server");  
-    ros::AsyncSpinner spinner(0);
-    spinner.start();
-    ros::WallDuration(1.0).sleep();
 
     //RTABMAP measure service initialisation
     RTABMAPServer RTABMAPServer;
 
-    ros::waitForShutdown();
+	ros::spin();
     return 0;
 }

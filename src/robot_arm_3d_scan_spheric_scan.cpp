@@ -20,50 +20,74 @@ int main(int argc, char **argv)
     spinner.start();
     ros::WallDuration(1.0).sleep();
 
-    //Command line arguments handling
-    if(argc < 3)
-    {
-        throw std::invalid_argument("MISSING CMD LINE ARGUMENT FOR robot_arm_3d_scan_spheric_scan_node !");
-        return(1);
-    }
-
     //Robot initialisation TODO More generic approach
-    Robot robot("panda_arm", argv[1], "panda_" + std::string(argv[1]));
+    Robot robot;
 
     //Robot visual tools initialisation
     RobotVisualTools visualTools;
 
     //Move the robot to its initial configuration
+    visualTools.setupU2IS();
     robot.init();
 
-    //Load object geometry
+    //Get the object radius, pose and the trajectory radius
     std::vector<double> poseObject;
     double radiusObject;
     double radiusTrajectory;
 
-    ROS_INFO("Getting acquisition parameters");
-
     ros::NodeHandle n;
-    n.getParam("poseObject",poseObject);
-    n.getParam("radiusObject",radiusObject);
-    n.getParam("radiusTrajectory",radiusTrajectory);
+    if(!n.getParam("poseReference",poseObject))
+    {
+        ROS_ERROR("Unable to retrieve measurements reference pose !");
+        throw std::runtime_error("MISSING PARAMETER");
+    }
+
+    if(!n.getParam("radiusObject",radiusObject))
+    {
+        ROS_ERROR("Unable to retrieve measured object radius !");
+        throw std::runtime_error("MISSING PARAMETER");
+    }
+
+    if(!n.getParam("radiusTrajectory",radiusTrajectory))
+    {
+        ROS_ERROR("Unable to retrieve trajectory radius !");
+        throw std::runtime_error("MISSING PARAMETER");
+    }
 
     geometry_msgs::Pose centerPose;
     centerPose.position.x = poseObject[0];
     centerPose.position.y = poseObject[1];
     centerPose.position.z = poseObject[2];
     
+    //Add collisions objects
     if(radiusObject != 0)
     {
         visualTools.addSphere("collisionSphere", centerPose, radiusObject, false);
     }
 
+    //Create spherical scanning waypoints poses
     int N=10;   //Waypoints number
     std::vector<geometry_msgs::Pose> waypoints;
     
     sphericInclinationTrajectory(centerPose, radiusTrajectory, M_PI/6, 0, 2*M_PI, N, waypoints); 
+
+    //Get the measurement server name
+    std::string measurementServerName, storageFolderName;
+    if(!n.getParam("measurementServerName",measurementServerName))
+    {
+        ROS_ERROR("Unable to retrieve measurement server name !");
+        throw std::runtime_error("MISSING PARAMETER");
+    }
+
+    //Get the storage folder name
+    if(!n.getParam("storageFolderName",storageFolderName))
+    {
+        ROS_ERROR("Unable to retrieve positions file name !");
+        throw std::runtime_error("MISSING PARAMETER");
+    }
     
-    robot.runMeasurementRountine(waypoints,argv[2],"/tmp/3d_ScanMeasurements/Positions.csv");
+    //Main loop
+    robot.runMeasurementRountine(waypoints,measurementServerName,false,storageFolderName+"Positions.csv");
 
     //Shut down ROS node
     robot.init();   

@@ -10,13 +10,19 @@ int main(int argc, char *argv[])
 {
     //ROS node initialisation
     ros::init(argc, argv, "icp_server");  
-    ros::AsyncSpinner spinner(0);
-    spinner.start();
-    ros::WallDuration(1.0).sleep();
+
+    //Get the point cloud topic name
+    ros::NodeHandle n;
+    std::string pointCloudTopic;
+    if(!n.getParam("pointCloudTopic",pointCloudTopic))
+    {
+        ROS_ERROR("Unable to retrieve point cloud topic name !");
+        throw std::runtime_error("MISSING PARAMETER");
+    }
 
     //RTABMAP measure service initialisation
-    PointCloudServer ICPServer("/camera/depth/color/points","/icp_filtered_point_cloud","/icp_server",ICPPointCloudFilter);
+    PointCloudServer ICPServer(pointCloudTopic,"/icp_filtered_point_cloud","/icp_server",ICPPointCloudFilter);
 
-    ros::waitForShutdown();
+	ros::spin();
     return 0;
 }
