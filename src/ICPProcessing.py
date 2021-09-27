@@ -56,9 +56,9 @@ class ICPProcessing:
         self.storageFolder = rospy.get_param("storageFolderName")
         try:
             os.mkdir(self.storageFolder)
-            rospy.loginfo("The folder " + self.storageFolder + "was created")
+            rospy.loginfo("Creating " + self.storageFolder + " ...")
         except OSError:
-            rospy.logwarn("The folder " + self.storageFolder + "already exists : its contents will be ereased !")
+            rospy.logwarn(self.storageFolder + "already exists : its contents will be overwritten !")
             pass 
 
     ## Callback method performing ICP on the recieved point clouds
