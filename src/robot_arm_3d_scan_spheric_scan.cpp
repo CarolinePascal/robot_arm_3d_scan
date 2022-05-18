@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     RobotVisualTools visualTools;
 
     //Move the robot to its initial configuration
-    visualTools.setupU2IS();
+    visualTools.setupOptiTrack();
     robot.init();
 
     //Get the object radius, pose and the trajectory radius
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     double radiusTrajectory;
 
     ros::NodeHandle n;
-    if(!n.getParam("poseReference",poseObject))
+    if(!n.getParam("poseObject",poseObject))
     {
         ROS_ERROR("Unable to retrieve measurements reference pose !");
         throw std::runtime_error("MISSING PARAMETER");

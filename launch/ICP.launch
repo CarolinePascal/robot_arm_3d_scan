@@ -2,7 +2,7 @@
 <launch>
 
     <!-- MEASUREMENT SERVER -->
-    <node pkg="robot_arm_3d_scan" type="ICPServer" name="icp_server" output="screen"/>
+    <node pkg="robot_arm_3d_scan" type="icp_server" name="icp_server" output="screen"/>
 
     <!-- ICP PROCESSING -->
 	<node pkg="robot_arm_3d_scan" type="ICPProcessing.py" name="icp_processing" output="screen"/>
