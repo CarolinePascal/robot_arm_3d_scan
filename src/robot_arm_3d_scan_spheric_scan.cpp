@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <robot_arm_tools/Robot.h>
+#include <robot_arm_tools/CalibratedRobot.h>
 #include <robot_arm_tools/RobotTrajectories.h>
 #include <robot_arm_tools/RobotVisualTools.h>
 
@@ -29,11 +29,14 @@ int main(int argc, char **argv)
     //Move the robot to its initial configuration
     visualTools.setupOptiTrack();
     robot.init();
+    robot.setAcceleration(0.05);
+    robot.setVelocity(0.1);
 
     //Get the object radius, pose and the trajectory radius
     std::vector<double> poseObject;
     double radiusObject;
     double radiusTrajectory;
+    int trajectoryStepsNumber;
 
     ros::NodeHandle n;
     if(!n.getParam("poseObject",poseObject))
@@ -54,6 +57,12 @@ int main(int argc, char **argv)
         throw std::runtime_error("MISSING PARAMETER");
     }
 
+    if(!n.getParam("trajectoryStepsNumber",trajectoryStepsNumber))
+    {
+        ROS_ERROR("Unable to retrieve trajectory steps number !");
+        throw std::runtime_error("MISSING PARAMETER");
+    }
+
     geometry_msgs::Pose centerPose;
     centerPose.position.x = poseObject[0];
     centerPose.position.y = poseObject[1];
@@ -66,10 +75,9 @@ int main(int argc, char **argv)
     }
 
     //Create spherical scanning waypoints poses
-    int N=10;   //Waypoints number
     std::vector<geometry_msgs::Pose> waypoints;
     
-    sphericInclinationTrajectory(centerPose, radiusTrajectory, M_PI/6, 0, 2*M_PI, N, waypoints); 
+    sphericInclinationTrajectory(centerPose, radiusTrajectory, M_PI/3, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
 
     //Get the measurement server name
     std::string measurementServerName, storageFolderName;

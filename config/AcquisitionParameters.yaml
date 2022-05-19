@@ -1,5 +1,7 @@
-poseObject: [0.3,0.1,0.1,0.0,0.0,0.0]
+poseObject: [0.0,0.75,0.15,0.0,0.0,0.0]
 
 radiusObject: 0.1
 
-radiusTrajectory: 0.2
+radiusTrajectory: 0.3
+
+trajectoryStepsNumber: 30

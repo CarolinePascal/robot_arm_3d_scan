@@ -5,6 +5,7 @@
     <arg name="robot_name" default="panda"/>
     <arg name="tool_name" default="camera"/>
     <arg name="simulation" default="false"/>
+    <arg name="calibration" default="true"/>
     <arg name="safety_distance" default="0.03"/>
     <arg name="method" default="icp"/>
 
@@ -12,6 +13,7 @@
 	<include file="$(find robot_arm_tools)/launch/Setup_$(arg robot_name).launch">
 		<arg name="tool_name" value="$(arg tool_name)"/>
 		<arg name="simulation" value="$(arg simulation)"/>
+        <arg name="calibration" value="$(arg calibration)"/>
 		<arg name="safety_distance" value="$(arg safety_distance)"/>
 	</include>
 
@@ -20,7 +22,7 @@
         <include file="$(find robot_arm_3d_scan)/launch/Setup_realsense.launch"/>
     </group>
 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0043 0 -1.57 3.14 $(arg robot_name)_camera camera_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 0 -1.57 3.14 $(arg robot_name)_camera camera_link" />
     
     <!-- SCANNING METHOD SETUP -->
     <group if="$(eval arg('method') == 'icp')">
