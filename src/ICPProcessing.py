@@ -123,9 +123,9 @@ class ICPProcessing:
 
         #Perform a two stages ICP on the local normals
         ICPTransformation = np.identity(4)
-        resultICP = o3d.registration.registration_icp(sourcePointCloud,targetPointCloud,0.02,ICPTransformation,o3d.registration.TransformationEstimationPointToPlane())
+        resultICP = o3d.pipelines.registration.registration_icp(sourcePointCloud,targetPointCloud,0.02,ICPTransformation,o3d.pipelines.registration.TransformationEstimationPointToPlane())
         ICPTransformation = resultICP.transformation
-        resultICP = o3d.registration.registration_icp(sourcePointCloud,targetPointCloud,0.01,ICPTransformation,o3d.registration.TransformationEstimationPointToPlane())
+        resultICP = o3d.pipelines.registration.registration_icp(sourcePointCloud,targetPointCloud,0.01,ICPTransformation,o3d.pipelines.registration.TransformationEstimationPointToPlane())
         ICPTransformation = resultICP.transformation
 
         #Extract translation et rotation
