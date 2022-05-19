@@ -2,7 +2,7 @@
 <launch>
     
     <!-- CAMERA SETUP -->
-    <arg name="realsense_json_file_path" default="$(find robot_arm_3d_scan)/config/camera/ShortRangePreset.json"/>
+    <arg name="realsense_json_file_path" default="$(find robot_arm_3d_scan)/config/camera/HighAccuracyPreset.json"/>
 
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
         <arg name="align_depth" value="true"/>
