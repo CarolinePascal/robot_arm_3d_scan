@@ -1,6 +1,6 @@
 #include "robot_arm_3d_scan/PointCloudServer.h"
 
-PointCloudServer::PointCloudServer(std::string rawPointCloudTopic, std::string filteredPointCloudTopic, std::string pointCloudServerName, std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter):MeasurementServer(pointCloudServerName), m_rawPointCloudTopic(rawPointCloudTopic), m_pointCloudFilter(pointCloudFilter)
+PointCloudServer::PointCloudServer(std::string rawPointCloudTopic, std::string filteredPointCloudTopic, std::string pointCloudServerName, std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter):MeasurementServer(pointCloudServerName,false,"/tmp/PointCloudMeasurements/"), m_rawPointCloudTopic(rawPointCloudTopic), m_pointCloudFilter(pointCloudFilter)
 {
     //Launch point cloud ROS publisher
     m_pointCloudPublisher = m_nodeHandle.advertise<pcl::PointCloud<pcl::PointXYZRGB>>(filteredPointCloudTopic,10);
