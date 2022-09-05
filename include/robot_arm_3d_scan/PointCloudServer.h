@@ -50,4 +50,7 @@ class PointCloudServer : public MeasurementServer
         std::string m_rawPointCloudTopic;   /*!< Name of the ROS topic on which raw point clouds are published */
 
         std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> m_pointCloudFilter;  /*!< Additionnal PCL filter */
+
+        std::string m_storageFolderName;    /*!< Name of the folder in which the point clouds are stored */
+        int m_pointCloudCounter;    /*! Point clouds counter */
 };

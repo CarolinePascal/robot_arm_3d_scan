@@ -69,7 +69,6 @@ class ICPProcessing:
 
         #Store recieved point cloud
         o3dPointCloud = orh.rospc_to_o3dpc(pointCloud)
-        o3d.io.write_point_cloud(self.storageFolder+"PointCloud"+str(self.pointCloudCounter)+".pcd", o3dPointCloud ,write_ascii = False)
 
         #First point cloud => No ICP !
         if self.pointCloudCounter == 1:     
