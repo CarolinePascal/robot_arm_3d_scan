@@ -1,0 +1,67 @@
+supportL:
+  type: box
+  pose:
+    x: 0.0
+    y: 0.0
+    z: -0.505
+    rx: 0.0
+    ry: 0.0
+    rz: 0.0
+  size:
+    dx: 0.80
+    dy: 0.80
+    dz: 0.45
+  collisions: true
+  robot_base_collisions: false
+
+supportU:
+  type: cylinder
+  pose:
+    x: 0.0
+    y: 0.0
+    z: -0.365
+    rx: 0.0
+    ry: 0.0
+    rz: 0.0
+  size:
+    radius: 0.0755
+    height: 0.73
+  collisions: true
+  robot_base_collisions: false
+
+controller:
+  type: box
+  pose:
+    x: -0.18
+    y: 0.0
+    z: -0.365
+    rx: 0.0
+    ry: 0.0
+    rz: 0.0
+  size:
+    dx: 0.36
+    dy: 0.46
+    dz: 0.73
+  collisions: true
+  robot_base_collisions: false
+
+ground:
+  type: border
+  axis: z
+  offset: -0.73
+  collisions: true
+
+table:
+  type: box
+  pose:
+    x: 0.8
+    y: 0.0
+    z: 0.4
+    rx: 0.0
+    ry: 0.0
+    rz: 0.0
+  size:
+    dx: 0.5
+    dy: 0.3
+    dz: 0.8
+  collisions: true
