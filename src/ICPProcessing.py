@@ -39,7 +39,7 @@ class ICPProcessing:
     def __init__(self):
 
         ## Point clouds ROS subscriber
-        self.pointCloudSubscriber = rospy.Subscriber("/icp_filtered_point_cloud",PointCloud2,self.callback,queue_size=100)
+        self.pointCloudSubscriber = rospy.Subscriber("/filtered_point_cloud",PointCloud2,self.callback,queue_size=100)
 
         ## Point cloud counter
         self.pointCloudCounter = 0
