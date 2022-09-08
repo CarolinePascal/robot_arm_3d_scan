@@ -145,7 +145,7 @@ add_executable(${PROJECT_NAME}_spheric_scan_node src/robot_arm_3d_scan_spheric_s
 
 add_executable(rtabmap_server src/RTABMAPServer.cpp)
 
-add_executable(icp_server src/ICPServer.cpp src/PointCloudServer.cpp)
+add_executable(point_cloud_server src/PointCloudServer.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -166,7 +166,7 @@ target_link_libraries(rtabmap_server
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(icp_server
+target_link_libraries(point_cloud_server
   ${catkin_LIBRARIES}
 )
 

@@ -1,6 +1,6 @@
 #include "robot_arm_3d_scan/RTABMAPServer.h"
 
-RTABMAPServer::RTABMAPServer():MeasurementServer("/rtabmap_server",false,"/tmp/RTABMAPMeasurements")
+RTABMAPServer::RTABMAPServer():MeasurementServer()
 {
     m_pause = m_nodeHandle.serviceClient<std_srvs::Empty>("RTABMAP/pause");
     m_resume = m_nodeHandle.serviceClient<std_srvs::Empty>("RTABMAP/resume");
