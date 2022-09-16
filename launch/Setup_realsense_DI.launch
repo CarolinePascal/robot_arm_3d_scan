@@ -6,11 +6,14 @@
 
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
         <arg name="align_depth" value="true"/>
-        <arg name="filters" value="pointcloud,temporal,decimation,disparity"/>
+        <arg name="filters" value="temporal,pointcloud"/>
+        <arg name="clip_distance" value="0.5"/>
         <arg name="json_file_path" value="$(arg realsense_json_file_path)"/>
     </include>
 
-    <!-- POINT CLOUD PARAMETERS -->
-    <param name="pointCloudTopic" value="/camera/depth/color/points"/>
+    <!-- GENERIC REMAP OF TOPICS NAMES -->
+    <remap from="/camera/color/image_raw" to="/rgb"/>
+    <remap from="/camera/aligned_depth_to_color/image_raw" to="/depth"/>
+    <remap from="/camera/color/camera_info" to="/camera_info"/>
 
 </launch>
