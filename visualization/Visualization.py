@@ -4,8 +4,11 @@ import sys
 import glob
 import os
 
-Files = glob.glob("*.pcd")
-Files = sorted(Files, key=lambda file:int(os.path.basename(file).split(".")[0].split("_")[-1]))
+try:
+    Files = [sys.argv[1]]
+except:
+    Files = glob.glob("*.pcd")
+    Files = sorted(Files, key=lambda file:int(os.path.basename(file).split(".")[0].split("_")[-1]))
 
 for i,file in enumerate(Files):
     pointCloud = o3d.io.read_point_cloud(file)
