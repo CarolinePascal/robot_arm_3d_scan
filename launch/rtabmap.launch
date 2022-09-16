@@ -2,18 +2,20 @@
 <launch>
 
 	<!-- MEASUREMENT SERVER -->
+	<param name="measurementServerName" value="/rtabmap_server"/>
     <node pkg="robot_arm_3d_scan" type="RTABMAPServer" name="rtabmap_server" output="screen"/>
 
 	<!-- RTABMAP PROCESSING -->
-	<arg name="rgb_topic"         default="/camera/color/image_raw"/>
-	<arg name="depth_topic"       default="/camera/aligned_depth_to_color/image_raw"/>
-	<arg name="camera_info_topic" default="/camera/color/camera_info"/>
+	<arg name="rgb_topic"         default="/rgb"/>
+	<arg name="depth_topic"       default="/depth"/>
+	<arg name="camera_info_topic" default="/camera_info"/>
+
 	<arg name="approx_sync"       default="false"/>
 
 	<group ns="rtabmap">
 		<node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="screen" args="--delete_db_on_start">
-			<param name="frame_id"      type="string" value="panda_link0"/> <!--base frame of the arm-->
-			<param name="odom_frame_id" type="string" value="panda_link0"/> <!-- same as frame_id, as the base of the arm doesn t move -->
+			<param name="frame_id"      type="string" value="world"/> <!--base frame of the arm-->
+			<param name="odom_frame_id" type="string" value="world"/> <!-- same as frame_id, as the base of the arm doesn t move -->
 			<param name="approx_sync"   type="bool"   value="$(arg approx_sync)"/>
 
 			<remap from="rgb/image"       to="$(arg rgb_topic)"/>

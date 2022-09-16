@@ -3,7 +3,7 @@
 
     <!-- GENERAL ARGUMENTS-->
     <arg name="robot_name" default="panda"/>
-    <arg name="tool_name" default="camera"/>
+    <arg name="tool_name" default="cameraD435"/>
     <arg name="simulation" default="false"/>
     <arg name="calibration" default="true"/>
     <arg name="safety_distance" default="0.03"/>
@@ -18,32 +18,25 @@
 	</include>
 
     <!-- TOOL SETUP -->
-    <group if="$(eval arg('tool_name') == 'camera')">
-        <include file="$(find robot_arm_3d_scan)/launch/Setup_realsense.launch"/>
-        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 0 -1.57 3.14 $(arg robot_name)_camera camera_link" />
+    <group if="$(eval arg('tool_name') == 'cameraD435')">
+        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 1.5708 0 0 $(arg robot_name)_cameraD435 camera_link" />
+        
+        <!-- Depth image based methods -->
+        <include file="$(find robot_arm_3d_scan)/launch/Setup_realsense_DI.launch" if="$(eval arg('method') == 'rtabmap')"/>
+
+        <!-- Point clouds based methods -->
+        <include file="$(find robot_arm_3d_scan)/launch/Setup_realsense_PC.launch" if="$(eval arg('method') == 'none' or arg('method') == 'icp')"/>
     </group>
     
-    <!-- SCANNING METHOD SETUP -->
-    <group if="$(eval arg('method') == 'rtabmap' and arg('tool') == 'camera')">
-        <include file="$(find robot_arm_3d_scan)/launch/RTABMAP.launch"/>
-    </group>
+    <!-- MATCHING METHOD SETUP -->
+    <include file="$(find robot_arm_3d_scan)/launch/$(arg method).launch"/>
 
-    <group if="$(eval arg('method') != 'rtabmap')">
-        <node pkg="robot_arm_3d_scan" type="point_cloud_server" name="point_cloud_server" output="screen">
-            <param name="measurementServerName" value="/point_cloud_server"/>
-            <param name="measurementServerDisplay" value="false"/>
-            <param name="measurementServerStorageFolder" value="$(find robot_arm_3d_scan)/config/scans/SphericScan_$(arg method)_$(arg calibration)/"/>
-        </node>
-        <node pkg="robot_arm_3d_scan" type="ICPProcessing.py" name="icp_processing" output="screen" if="$(eval arg('method') == 'icp')"/>
-    </group>
-
-    <!-- MAIN NODE -->    
-    <param name="measurementServerName" value="/point_cloud_server"/>
-    <param name="measurementServerDisplay" value="false"/>
+    <!-- MAIN NODE -->       
     <param name="measurementServerStorageFolder" value="$(find robot_arm_3d_scan)/config/scans/SphericScan_$(arg method)_$(arg calibration)/"/>
-    
+    <param name="measurementServerDisplay" value="false"/>
+
     <rosparam command="load" file="$(find robot_arm_3d_scan)/config/AcquisitionParameters.yaml"/>
-    <node pkg="robot_arm_3d_scan" type="robot_arm_3d_scan_spheric_scan_node" name="robot_arm_3d_scan_spheric_scan_node" output="screen"/>
+    <node pkg="robot_arm_3d_scan" type="robot_arm_3d_scan_scan_node" name="robot_arm_3d_scan_scan_node" output="screen"/>
 
     <!-- RVIZ -->	
     <param name="environmentFileName" value="$(find robot_arm_3d_scan)/config/environments/OptiTrack.yaml"/>

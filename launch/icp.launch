@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<launch>
+    <param name="measurementServerName" value="/icp_server"/>
+    <node pkg="robot_arm_3d_scan" type="point_cloud_sevrer" name="point_cloud_sevrer" output="screen"/>
+    <node pkg="robot_arm_3d_scan" type="ICPProcessing.py" name="icp_processing" output="screen"/>
+</launch>
