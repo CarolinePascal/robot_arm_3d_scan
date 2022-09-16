@@ -20,11 +20,9 @@ class PointCloudServer : public MeasurementServer
     public:
         /*!
          *  \brief Constructor
-         *  \param rawPointCloudTopic The name of the ROS topic on which raw point clouds are published
-         *  \param filteredPointCloudTopic The name of the ROS topic on which to publish the filtered point clouds
          *  \param pointCloudFilter The filter to be applied on the measured point clouds
          */
-        PointCloudServer(std::string rawPointCloudTopic, std::string filteredPointCloudTopic = "/filtered_point_cloud", std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter = PointCloudServer::emptyPCLFilter);
+        PointCloudServer(std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter = PointCloudServer::emptyPCLFilter);
 
         /*!
          *  \brief Destructor
@@ -41,10 +39,6 @@ class PointCloudServer : public MeasurementServer
         static void emptyPCLFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud){};
 
         ros::Publisher m_pointCloudPublisher;   /*!< ROS measured & filtered point clouds publisher */
-        std::string m_rawPointCloudTopic;   /*!< Name of the ROS topic on which raw point clouds are published */
 
         std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> m_pointCloudFilter;  /*!< Additionnal PCL filter */
-
-        //TODO GLOBAL !!
-        int m_pointCloudCounter;    /*! Point clouds counter */
 };

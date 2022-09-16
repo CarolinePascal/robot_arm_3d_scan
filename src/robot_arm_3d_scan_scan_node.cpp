@@ -78,23 +78,8 @@ int main(int argc, char **argv)
     
     sphericInclinationTrajectory(centerPose, radiusTrajectory, M_PI/3, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
 
-    //Get the measurement server name
-    std::string measurementServerName, measurementServerStorageFolder;
-    if(!n.getParam("measurementServerName",measurementServerName))
-    {
-        ROS_ERROR("Unable to retrieve measurement server name !");
-        throw std::runtime_error("MISSING PARAMETER");
-    }
-
-    //Get the storage folder name
-    if(!n.getParam("measurementServerStorageFolder",measurementServerStorageFolder))
-    {
-        ROS_ERROR("Unable to retrieve server storage folder !");
-        throw std::runtime_error("MISSING PARAMETER");
-    }
-    
     //Main loop
-    robot.runMeasurementRountine(waypoints,measurementServerName,false,measurementServerStorageFolder+"Positions.csv");
+    robot.runMeasurementRountine(waypoints);
 
     //Shut down ROS node
     robot.init();   
