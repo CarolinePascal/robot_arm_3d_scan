@@ -27,7 +27,7 @@ bool PointCloudServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::R
 
 void SimplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
 {
-    groundRemovalFilter(pointCloud,0.005);
+    //groundRemovalFilter(pointCloud,0.05);
 }
 
 int main(int argc, char *argv[])

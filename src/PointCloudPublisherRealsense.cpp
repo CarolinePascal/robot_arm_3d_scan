@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     {
         // Wait for the next set of frames from the camera
         frames = pipe.wait_for_frames();
-        frames = align_to_depth.process(frames);
+        //frames = align_to_depth.process(frames);
         depth = frames.get_depth_frame();
         color = frames.get_color_frame();
 
