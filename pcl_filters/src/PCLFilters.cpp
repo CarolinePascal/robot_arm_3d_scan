@@ -87,7 +87,8 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, doub
             //viewer->addPointCloud(pointCloud,"Inliers");
 
             //Case where a plane not perpendicular to the z-axis is detected (i.e. not ground plane)
-            if((coefficients->values[2] < 0.8 && coefficients->values[2] > -0.8))
+            pcl::PointXYZRGB centroid; pcl::computeCentroid(*pointCloud,centroid);
+            if((coefficients->values[2] < 0.8 && coefficients->values[2] > -0.8) || (coefficients->values[3] > centroid.z))
             {
                 //Store the corresponding points in a "false positive" temporary point cloud
                 *pointCloudErrors += *pointCloudTmp;
