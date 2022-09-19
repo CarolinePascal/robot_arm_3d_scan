@@ -9,6 +9,8 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/ModelCoefficients.h>
 
+#include <pcl/visualization/pcl_visualizer.h>
+
 #include <pcl_ros/transforms.h>
 #include <tf2_ros/transform_listener.h>
 
@@ -26,9 +28,6 @@ void thresholdFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double m
 
 void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double distanceThreshold)
 {
-    //Transform the point cloud into the world frame
-    transformPointCloud(pointCloud,"world");
-
     //Plane model segmentation => Split the points regarding to the plane thay belong to 
 
     //Define the segementation filter parameters
@@ -45,9 +44,13 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, doub
     pcl::ExtractIndices<pcl::PointXYZRGB> extract;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudErrors (new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudTmp (new pcl::PointCloud<pcl::PointXYZRGB>);
-
+        
     for(int i = 0; i < RANSAC_MAXIMUM_ITERATIONS; i++)
-    {
+    {    
+        //DEBUG
+        //pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("DEBUG"));
+        //viewer->setBackgroundColor (0, 0, 0);
+
         //Perform plane segmentation in the point cloud
         seg.setInputCloud(pointCloud);
         seg.segment(*inliers, *coefficients);
@@ -58,40 +61,46 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, doub
             throw std::invalid_argument("CANNOT ESTIMATE PLANAR MODEL FOR THE GIVEN DATA SET !"); 
         }
 
-        //Case where a plane perpendicular to the z-axis and located at the robot base (i.e. ground plane) is detected
-        else if((coefficients->values[2] > 0.9 || coefficients->values[2] < -0.9) && (coefficients->values[3] < 0.05 && coefficients->values[3] > -0.05))
-        {
-            //Filter the detected plane
-            extract.setInputCloud(pointCloud);
-            extract.setIndices(inliers);
-            extract.setNegative(true);  
-            extract.filter(*pointCloud);
-
-            //Exit detection loop
-            break;
-        }
-
-        //Case where a non-ground plane is detected
         else
         {
+            //DEBUG
+            /*std::cout << "Model coefficients: " << coefficients->values[0] << " " 
+                            << coefficients->values[1] << " "
+                            << coefficients->values[2] << " " 
+                            << coefficients->values[3] << std::endl;*/
+
             //Extract the detected plane
             extract.setInputCloud(pointCloud);
             extract.setIndices(inliers);
-            extract.setNegative(false);  
+            extract.setNegative(false); 
             extract.filter(*pointCloudTmp);
 
-            //Store the corresponding points in a "false positive" temporary point cloud
-            *pointCloudErrors += *pointCloudTmp;
+            //DEBUG
+            //pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> color(pointCloudTmp, 255, 0, 0);
+            //viewer->addPointCloud(pointCloudTmp,color,"Outliers");
 
             //Filter the detected plane
-            extract.setNegative(true);  
+            extract.setNegative(true); 
             extract.filter(*pointCloud);
-        }
 
-        //std::cout << "Model coefficients: " << coefficients->values[0] << " " 
-        //                            << coefficients->values[1] << " "
-        //                            << coefficients->values[2] << " " 
-        //                            << coefficients->values[3] << std::endl;
+            //DEBUG
+            //viewer->addPointCloud(pointCloud,"Inliers");
+
+            //Case where a plane not perpendicular to the z-axis is detected (i.e. not ground plane)
+            if((coefficients->values[2] < 0.8 && coefficients->values[2] > -0.8))
+            {
+                //Store the corresponding points in a "false positive" temporary point cloud
+                *pointCloudErrors += *pointCloudTmp;
+            }
+
+            //DEBUG
+            /*viewer->addCoordinateSystem (1.0);
+            viewer->initCameraParameters ();
+            while(!viewer->wasStopped())
+            {
+                viewer->spinOnce();
+            }*/
+        }
     }
 
     //Add back the eventual "false positive" detected ground planes
