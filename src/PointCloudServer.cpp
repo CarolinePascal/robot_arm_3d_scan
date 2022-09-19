@@ -27,7 +27,17 @@ bool PointCloudServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::R
 
 void SimplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
 {
-    //groundRemovalFilter(pointCloud,0.05);
+    //Mandatory !!
+    transformPointCloud(pointCloud,"world");
+    try
+    {
+        //TODO Estimate ground height !!!
+        groundRemovalFilter(pointCloud,0.05); 
+    }
+    catch(const std::exception& e)
+    {
+        continue;
+    }   
 }
 
 int main(int argc, char *argv[])
