@@ -36,7 +36,7 @@ void SimplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
     }
     catch(const std::exception& e)
     {
-        continue;
+        //continue;
     }   
 }
 
