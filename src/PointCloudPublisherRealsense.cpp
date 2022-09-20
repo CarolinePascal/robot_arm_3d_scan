@@ -112,13 +112,13 @@ int main(int argc, char **argv)
     // Start the streaming pipeline for both depth and RGB data
     rs2::pipeline pipe;
     rs2::config cfg;
-    cfg.enable_stream(RS2_STREAM_DEPTH);
-    cfg.enable_stream(RS2_STREAM_COLOR);
+    cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 60);
+    cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_RGB8, 60);
     pipe.start(cfg);
 
     // Declare pointclouds
     rs2::frameset frames;
-    rs2::pointcloud pc;
+    rs2::pointcloud pc; 
     rs2::points points;
     rs2::frame color;
     rs2::frame depth;
