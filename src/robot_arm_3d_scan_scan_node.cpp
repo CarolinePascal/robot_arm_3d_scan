@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     sphericInclinationTrajectory(centerPose, radiusTrajectory, M_PI/3, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
 
     //Main loop
-    robot.runMeasurementRountine(waypoints);
+    robot.runMeasurementRountine(waypoints,false,true,M_PI);
 
     //Shut down ROS node
     robot.init();   
