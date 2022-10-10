@@ -32,7 +32,7 @@ void SimplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
     try
     {
         //TODO Estimate ground height !!!
-        groundRemovalFilter(pointCloud,0.05); 
+        groundRemovalFilter(pointCloud,0.01); 
     }
     catch(const std::exception& e)
     {

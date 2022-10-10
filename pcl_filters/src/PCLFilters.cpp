@@ -51,8 +51,8 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, doub
     for(int i = 0; i < RANSAC_MAXIMUM_ITERATIONS; i++)
     {    
         //DEBUG
-        pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("DEBUG"));
-        viewer->setBackgroundColor (0, 0, 0);
+        //pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("DEBUG"));
+        //viewer->setBackgroundColor (0, 0, 0);
 
         //Perform plane segmentation in the point cloud
         seg.setInputCloud(pointCloud);
@@ -67,10 +67,10 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, doub
         else
         {
             //DEBUG
-            std::cout << "Model coefficients: " << coefficients->values[0] << " " 
+            /*std::cout << "Model coefficients: " << coefficients->values[0] << " " 
                             << coefficients->values[1] << " "
                             << coefficients->values[2] << " " 
-                            << coefficients->values[3] << std::endl;
+                            << coefficients->values[3] << std::endl;*/
 
             //Extract the detected plane
             extract.setInputCloud(pointCloud);
@@ -79,15 +79,15 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, doub
             extract.filter(*pointCloudTmp);
 
             //DEBUG
-            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> color(pointCloudTmp, 255, 0, 0);
-            viewer->addPointCloud(pointCloudTmp,color,"Outliers");
+            //pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> color(pointCloudTmp, 255, 0, 0);
+            //viewer->addPointCloud(pointCloudTmp,color,"Outliers");
 
             //Filter the detected plane
             extract.setNegative(true); 
             extract.filter(*pointCloud);
 
             //DEBUG
-            viewer->addPointCloud(pointCloud,"Inliers");
+            //viewer->addPointCloud(pointCloud,"Inliers");
 
             //Case where a plane not perpendicular to the z-axis is detected (i.e. not ground plane)
             pcl::PointXYZRGB centroid; pcl::computeCentroid(*pointCloud,centroid);
@@ -98,12 +98,12 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, doub
             }
 
             //DEBUG
-            viewer->addCoordinateSystem (1.0);
+            /*viewer->addCoordinateSystem (1.0);
             viewer->initCameraParameters ();
             while(!viewer->wasStopped())
             {
                 viewer->spinOnce();
-            }
+            }*/
         }
     }
 
