@@ -2,10 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(robot_arm_3d_scan)
 
 add_subdirectory(pcl_filters)
-
-find_package(OpenGL REQUIRED)
-set(DEPENDENCIES realsense2 glfw ${OPENGL_LIBRARIES})
-find_library(REALSENSE2 realsense2 REQUIRED)
+find_library(realsense2 REQUIRED)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -14,7 +11,6 @@ find_library(REALSENSE2 realsense2 REQUIRED)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  laser_geometry
   pcl_conversions
   pcl_msgs
   pcl_ros
@@ -81,8 +77,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
-#   DEPENDENCIES
-#   pcl_msgs
 # )
 
 ################################################
@@ -178,7 +172,7 @@ target_link_libraries(point_cloud_server
 
 target_link_libraries(point_cloud_publisher_realsense
   ${catkin_LIBRARIES}
-  ${DEPENDENCIES}
+  realsense2
 )
 
 #############
