@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     RobotVisualTools visualTools;
 
     //Move the robot to its initial configuration
-    robot.init();
+    //robot.init();
     robot.setAcceleration(0.05);
     robot.setVelocity(0.1);
 
@@ -76,13 +76,12 @@ int main(int argc, char **argv)
     //Create spherical scanning waypoints poses
     std::vector<geometry_msgs::Pose> waypoints;
     
-    sphericInclinationTrajectory(centerPose, radiusTrajectory, M_PI/3, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
+    sphericInclinationTrajectory(centerPose, radiusTrajectory, M_PI/3.5, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
 
     //Main loop
     robot.runMeasurementRountine(waypoints,false,true,M_PI);
 
-    //Shut down ROS node
-    robot.init();   
+    //Shut down ROS node 
     ros::waitForShutdown();
     return 0;
 }
