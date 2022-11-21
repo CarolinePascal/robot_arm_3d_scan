@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 3.0.2)
 project(robot_arm_3d_scan)
 
 add_subdirectory(pcl_filters)
-find_library(realsense2 REQUIRED)
+find_library(REALSENSE2_FOUND realsense2 REQUIRED)
+if(NOT REALSENSE2_FOUND)
+    SET(REALSENSE2_FOUND "realsense2")
+    message(WARN "Failed to find_library(realsense2)")
+endif()
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
