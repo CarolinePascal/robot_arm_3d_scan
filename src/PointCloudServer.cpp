@@ -19,7 +19,10 @@ bool PointCloudServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::R
 
     //Filter point cloud, save it and publish it
     m_pointCloudFilter(pointCloud);
-    pcl::io::savePCDFileASCII(std::string(m_measurementServerStorageFolder + "PointCloud_" + std::to_string(m_measurementServerCounter) + ".pcd"), *pointCloud);
+    if(m_measurementServerStorageFolder != "")
+    {
+        pcl::io::savePCDFileASCII(std::string(m_measurementServerStorageFolder + "PointCloud_" + std::to_string(m_measurementServerCounter) + ".pcd"), *pointCloud);
+    }
     m_pointCloudPublisher.publish(*pointCloud);
 
     return(true);
