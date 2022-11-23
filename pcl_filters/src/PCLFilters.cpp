@@ -11,6 +11,8 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 
+#include <pcl/common/common.h>
+
 #include <pcl_ros/transforms.h>
 #include <tf2_ros/transform_listener.h>
 
@@ -26,7 +28,7 @@ void thresholdFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double m
     thresholdFilter.filter(*pointCloud);
 }
 
-void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double distanceThreshold)
+void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr groundPointCloud, double distanceThreshold)
 {
     //Plane model segmentation => Split the points regarding to the plane thay belong to 
 
@@ -47,7 +49,7 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, doub
     pcl::ExtractIndices<pcl::PointXYZRGB> extract;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudErrors (new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudTmp (new pcl::PointCloud<pcl::PointXYZRGB>);
-        
+    
     for(int i = 0; i < RANSAC_MAXIMUM_ITERATIONS; i++)
     {    
         //DEBUG
@@ -95,6 +97,12 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, doub
             {
                 //Store the corresponding points in a "false positive" temporary point cloud
                 *pointCloudErrors += *pointCloudTmp;
+            }
+
+            else
+            {
+                //Store the extracted points for ground data recovery
+                *groundPointCloud += *pointCloudTmp;
             }
 
             //DEBUG
@@ -200,4 +208,14 @@ void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, d
     RGBfilter.setInputCloud(pointCloud);
     RGBfilter.setCondition(colorCondition);
     RGBfilter.filter(*pointCloud);
+}
+
+void BoundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double& sizeX, double& sizeY, double& sizeZ)
+{
+    pcl::PointXYZRGB minPoint, maxPoint;
+    pcl::getMinMax3D(*pointCloud, minPoint, maxPoint);
+
+    sizeX = sqrt((maxPoint.x - minPoint.x)*(maxPoint.x - minPoint.x));
+    sizeY = sqrt((maxPoint.y - minPoint.y)*(maxPoint.y - minPoint.y));
+    sizeZ = sqrt((maxPoint.z - minPoint.z)*(maxPoint.z - minPoint.z));
 }

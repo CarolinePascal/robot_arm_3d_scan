@@ -25,9 +25,10 @@ void thresholdFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double l
 /*!
  * \brief Applies a RANSAC based ground removal filter on a XYZRGB point cloud.
  * \param pointCloud Pointer on the point cloud to filter.
+ * \param groundPointCloud Pointer on the filtered ground point cloud.
  * \param distanceThreshold Distance threshold of the plane detection.
 */
-void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double distanceThreshold);
+void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr groundPointCloud, double distanceThreshold);
 
 /*!
  * \brief Transform a XYZRGB point cloud into a given frame.
@@ -66,3 +67,12 @@ void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud);
  * \param maxB Maximum blue value.
 */
 void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, double minG, double minB, double maxR, double maxG, double maxB);
+
+/*!
+ * \brief Returns the bounding box of a point cloud.
+ * \param pointCloud Pointer on the point cloud to filter. 
+ * \param sizeX Size of the bouding box along the X axis.
+ * \param sizeY Size of the bouding box along the Y axis.
+ * \param sizeZ Size of the bouding box along the Z axis.
+*/
+void BoundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double& sizeX, double& sizeY, double& sizeZ);
