@@ -11,6 +11,8 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 
+#include <pcl/filters/crop_box.h>
+
 #include <pcl_ros/transforms.h>
 #include <tf2_ros/transform_listener.h>
 
@@ -174,7 +176,7 @@ void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
     radiusFilter.filter(*pointCloud);
 }
 
-void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, double minG, double minB, double maxR, double maxG, double maxB)
+void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, double maxR, double minG, double maxG, double minB, double maxB)
 {
     //Conditionnal RGB filter => Segments and removes points of a given color (Optionnal - HL Programming)
     pcl::ConditionalRemoval<pcl::PointXYZRGB> RGBfilter;
@@ -200,4 +202,14 @@ void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, d
     RGBfilter.setInputCloud(pointCloud);
     RGBfilter.setCondition(colorCondition);
     RGBfilter.filter(*pointCloud);
+}
+
+void cropFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minX, double maxX, double minY, double maxY, double minZ, double maxZ)
+{
+    pcl::CropBox<pcl::PointXYZRGB> box;
+    box.setMin(Eigen::Vector4f(minX, minY, minZ, 1.0));
+    box.setMax(Eigen::Vector4f(maxX, maxY, maxZ, 1.0));
+
+    box.setInputCloud(pointCloud);
+    box.filter(*pointCloud);
 }

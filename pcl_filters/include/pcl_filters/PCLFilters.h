@@ -59,10 +59,22 @@ void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud);
  * \brief Applies a color threshold filter on a XYZRGB point cloud.
  * \param pointCloud Pointer on the point cloud to filter.
  * \param minR Minimum red value.
- * \param minG Minimum green value.
- * \param minB Minimum blue value.
  * \param maxR Maximum red value.
+ * \param minG Minimum green value.
  * \param maxG Maximum green value.
+ * \param minB Minimum blue value.
  * \param maxB Maximum blue value.
 */
-void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, double minG, double minB, double maxR, double maxG, double maxB);
+void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, double maxR, double minG, double maxG, double minB, double maxB);
+
+/*!
+ * \brief Applies a cropping filter on a XYZRGB point cloud.
+ * \param pointCloud Pointer on the point cloud to filter.
+ * \param minX Minimum distance along the X axis.
+ * \param maxX Maximum distance along the X axis. 
+ * \param minY Minimum distance along the Y axis.
+ * \param maxY Maximum distance along the Y axis. 
+ * \param minZ Minimum distance along the Z axis.
+ * \param maxZ Maximum distance along the Z axis. 
+*/
+void cropFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minX, double maxX, double minY, double maxY, double minZ, double maxZ);
