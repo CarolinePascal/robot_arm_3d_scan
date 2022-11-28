@@ -8,7 +8,7 @@
 
 #pragma once
 
-#define RANSAC_MAXIMUM_ITERATIONS 3
+#define RANSAC_MAXIMUM_ITERATIONS 5
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
@@ -75,7 +75,7 @@ void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, d
  * \param sizeY Size of the bouding box along the Y axis.
  * \param sizeZ Size of the bouding box along the Z axis.
 */
-void BoundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double& sizeX, double& sizeY, double& sizeZ);
+void boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double& sizeX, double& sizeY, double& sizeZ);
 
 /*!
  * \brief Applies a cropping filter on a XYZRGB point cloud.
@@ -88,3 +88,10 @@ void BoundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double
  * \param maxZ Maximum distance along the Z axis. 
 */
 void cropFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minX, double maxX, double minY, double maxY, double minZ, double maxZ);
+
+/*!
+ * \brief Applies a confidence interval based filter on a XYZRGB point cloud.
+ * \param pointCloud Pointer on the point cloud to filter.
+ * \param confidenceRate Size of the confidence interval to use.
+*/
+void confidenceIntervalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double confidenceRate);

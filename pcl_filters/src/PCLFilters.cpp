@@ -11,11 +11,13 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 
-<<<<<<< HEAD
 #include <pcl/common/common.h>
-=======
+#include <pcl/common/centroid.h>
+#include <pcl/common/distances.h>
+
+#include <boost/math/distributions/normal.hpp>
+
 #include <pcl/filters/crop_box.h>
->>>>>>> 15d38edef605ca3b9fd4e273e3cf4cb9bf68c282
 
 #include <pcl_ros/transforms.h>
 #include <tf2_ros/transform_listener.h>
@@ -73,10 +75,11 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl:
         else
         {
             //DEBUG
-            /*std::cout << "Model coefficients: " << coefficients->values[0] << " " 
+            ROS_WARN("DEBUG GROUND REMOVAL FILTER - PLANE COEFFICIENTS");
+            std::cout << "Model coefficients: " << coefficients->values[0] << " " 
                             << coefficients->values[1] << " "
                             << coefficients->values[2] << " " 
-                            << coefficients->values[3] << std::endl;*/
+                            << coefficients->values[3] << std::endl;
 
             //Extract the detected plane
             extract.setInputCloud(pointCloud);
@@ -96,7 +99,8 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl:
             //viewer->addPointCloud(pointCloud,"Inliers");
 
             //Case where a plane not perpendicular to the z-axis is detected (i.e. not ground plane)
-            pcl::PointXYZRGB centroid; pcl::computeCentroid(*pointCloud,centroid);
+            pcl::PointXYZRGB centroid; 
+            pcl::computeCentroid(*pointCloud,centroid);
             if((coefficients->values[2] < 0.8 && coefficients->values[2] > -0.8) || (coefficients->values[3] > centroid.z))
             {
                 //Store the corresponding points in a "false positive" temporary point cloud
@@ -214,7 +218,7 @@ void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, d
     RGBfilter.filter(*pointCloud);
 }
 
-void BoundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double& sizeX, double& sizeY, double& sizeZ)
+void boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double& sizeX, double& sizeY, double& sizeZ)
 {
     pcl::PointXYZRGB minPoint, maxPoint;
     pcl::getMinMax3D(*pointCloud, minPoint, maxPoint);
@@ -232,4 +236,67 @@ void cropFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minX, 
 
     box.setInputCloud(pointCloud);
     box.filter(*pointCloud);
+}
+
+void confidenceIntervalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double confidenceRate)
+{
+    pcl::PointXYZRGB centroid;
+    computeCentroid(*pointCloud,centroid);
+
+    double sizeX,sizeY,sizeZ;
+    boundingBoxFilter(pointCloud, sizeX, sizeY, sizeZ);
+
+    std::vector<float> distances;
+    for(int i = 0; i < pointCloud->points.size(); i++) 
+    {
+        distances.push_back(euclideanDistance(pointCloud->points[i],centroid));
+    }
+
+    double mean,stdd;
+    pcl::getMeanStd(distances,mean,stdd);
+    for(int i = 0; i < pointCloud->points.size(); i++) 
+    {
+        distances.push_back(euclideanDistance(pointCloud->points[i],centroid));
+    }
+
+    boost::math::normal dist(0.0, 1.0);
+    double q = quantile(dist, confidenceRate);
+
+    pcl::PointIndices::Ptr outliers (new pcl::PointIndices);
+    for(int i = 0; i < pointCloud->points.size(); i++) 
+    {
+        if(distances[i] > mean + q*stdd)
+        {
+            outliers->indices.push_back(i);
+        }
+    }
+
+    //DEBUG
+    ROS_WARN("DEBUG CONFIDENCE INTERVAL FILTER - OUTLIERS NUMBER : %d",outliers->indices.size());
+    //pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("DEBUG"));
+    //viewer->setBackgroundColor (0, 0, 0);
+
+    pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+    extract.setInputCloud(pointCloud);
+    extract.setIndices(outliers);
+
+    //DEBUG
+    //pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpPointCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    //extract.setNegative(true); 
+    //extract.filter(*tmpPointCloud);
+    //pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> tmpColor(tmpPointCloud, 255, 0, 0);
+    //viewer->addPointCloud(tmpPointCloud,tmpColor,"Outliers");
+
+    extract.setNegative(false); 
+    extract.filter(*pointCloud);
+
+    //DEBUG
+    //pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> color(pointCloud, 0, 255, 0);
+    //viewer->addPointCloud(pointCloud,color,"Inliers");
+    //viewer->addCoordinateSystem (1.0);
+    //viewer->initCameraParameters ();
+    //while(!viewer->wasStopped())
+    //{
+    //    viewer->spinOnce();
+    //}
 }
