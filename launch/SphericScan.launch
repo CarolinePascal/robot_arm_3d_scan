@@ -36,7 +36,7 @@
     <param name="measurementServerDisplay" value="false"/>
 
     <rosparam command="load" file="$(find robot_arm_3d_scan)/config/AcquisitionParameters.yaml"/>
-    <node pkg="robot_arm_3d_scan" type="robot_arm_3d_scan_scan_node" name="robot_arm_3d_scan_scan_node" output="screen"/>
+    <node pkg="robot_arm_3d_scan" type="robot_arm_3d_scan_scan_node" name="robot_arm_3d_scan_scan_node" output="screen" required="true"/>
 
     <!-- RVIZ -->	
     <param name="environmentFileName" value="$(find robot_arm_3d_scan)/config/environments/OptiTrack_panda.yaml" if="$(eval arg('robot_name') == 'panda')"/>
