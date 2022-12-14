@@ -3,8 +3,9 @@
     <!-- CAMERA SETUP -->
     <param name="realsense_json_file_path" value="$(find robot_arm_3d_scan)/config/realsense/HighAccuracyPreset.json"/>
     <param name="disparity_shift" value="5.0"/>
-    <param name="depth_units" value="0.00001"/>
+    <param name="depth_units" value="0.0001"/>
     <rosparam param="filters">["temporal","threshold"]</rosparam>
-    <node pkg="robot_arm_3d_scan" type="point_cloud_publisher_realsense" name="point_cloud_publisher" output="screen"/>
+    <rosparam param="threshold_filter">["0.0","0.5"]</rosparam>
+    <node pkg="robot_arm_3d_scan" type="realsense_camera_node" name="realsense_camera_node" output="screen"/>
 </launch>
 

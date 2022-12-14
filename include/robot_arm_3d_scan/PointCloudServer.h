@@ -9,8 +9,14 @@
 #pragma once
 
 #include <functional>
-#include "robot_arm_tools/MeasurementServer.h"
+#include <robot_arm_tools/MeasurementServer.h>
+#include <robot_arm_tools/RobotVisualTools.h>
+
 #include "pcl_filters/PCLFilters.h"
+
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
  /*! \class PointCloudServer
   * \brief Class used to trigger point cloud measurements
@@ -20,9 +26,8 @@ class PointCloudServer : public MeasurementServer
     public:
         /*!
          *  \brief Constructor
-         *  \param pointCloudFilter The filter to be applied on the measured point clouds
          */
-        PointCloudServer(std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> pointCloudFilter = PointCloudServer::emptyPCLFilter);
+        PointCloudServer();
 
         /*!
          *  \brief Destructor
@@ -34,11 +39,19 @@ class PointCloudServer : public MeasurementServer
          */
         bool measure(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 
-    private:
+        void simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud);
 
-        static void emptyPCLFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud){};
+    private:
 
         ros::Publisher m_pointCloudPublisher;   /*!< ROS measured & filtered point clouds publisher */
 
-        std::function<void (pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)> m_pointCloudFilter;  /*!< Additionnal PCL filter */
+        tf2_ros::Buffer m_tfBuffer;
+        tf2_ros::TransformListener m_tfListener;
+        std::string m_pointCloudFrame;
+
+        RobotVisualTools m_visualTools;
+        double m_radiusObject;
+        geometry_msgs::Pose m_objectPose;
+
+        static int m_supportScanCounter;
 };

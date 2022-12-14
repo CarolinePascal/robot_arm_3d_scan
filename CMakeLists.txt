@@ -23,6 +23,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   pcl_filters
   robot_arm_tools
+  message_generation
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -66,11 +68,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  FloatParameters.srv
+  StringParameter.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -80,8 +82,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-# )
+generate_messages(
+  DEPENDENCIES 
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -149,7 +153,7 @@ add_executable(rtabmap_server src/RTABMAPServer.cpp)
 
 add_executable(point_cloud_server src/PointCloudServer.cpp)
 
-add_executable(point_cloud_publisher_realsense src/PointCloudPublisherRealsense.cpp)
+add_executable(realsense_camera_node src/RealSenseCamera.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -159,7 +163,7 @@ add_executable(point_cloud_publisher_realsense src/PointCloudPublisherRealsense.
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(realsense_camera_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_scan_node
@@ -174,7 +178,7 @@ target_link_libraries(point_cloud_server
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(point_cloud_publisher_realsense
+target_link_libraries(realsense_camera_node
   ${catkin_LIBRARIES}
   realsense2
 )

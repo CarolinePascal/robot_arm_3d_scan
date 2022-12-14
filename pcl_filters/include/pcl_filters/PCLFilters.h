@@ -8,7 +8,7 @@
 
 #pragma once
 
-#define RANSAC_MAXIMUM_ITERATIONS 3
+#define RANSAC_MAXIMUM_ITERATIONS 5
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
@@ -25,9 +25,10 @@ void thresholdFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double l
 /*!
  * \brief Applies a RANSAC based ground removal filter on a XYZRGB point cloud.
  * \param pointCloud Pointer on the point cloud to filter.
+ * \param groundPointCloud Pointer on the filtered ground point cloud.
  * \param distanceThreshold Distance threshold of the plane detection.
 */
-void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double distanceThreshold);
+void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr groundPointCloud, double distanceThreshold);
 
 /*!
  * \brief Transform a XYZRGB point cloud into a given frame.
@@ -68,6 +69,15 @@ void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud);
 void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, double maxR, double minG, double maxG, double minB, double maxB);
 
 /*!
+ * \brief Returns the bounding box of a point cloud.
+ * \param pointCloud Pointer on the point cloud to filter. 
+ * \param sizeX Size of the bouding box along the X axis.
+ * \param sizeY Size of the bouding box along the Y axis.
+ * \param sizeZ Size of the bouding box along the Z axis.
+*/
+void boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double& sizeX, double& sizeY, double& sizeZ);
+
+/*!
  * \brief Applies a cropping filter on a XYZRGB point cloud.
  * \param pointCloud Pointer on the point cloud to filter.
  * \param minX Minimum distance along the X axis.
@@ -78,3 +88,10 @@ void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, d
  * \param maxZ Maximum distance along the Z axis. 
 */
 void cropFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minX, double maxX, double minY, double maxY, double minZ, double maxZ);
+
+/*!
+ * \brief Applies a confidence interval based filter on a XYZRGB point cloud.
+ * \param pointCloud Pointer on the point cloud to filter.
+ * \param confidenceRate Size of the confidence interval to use.
+*/
+void confidenceIntervalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double confidenceRate);

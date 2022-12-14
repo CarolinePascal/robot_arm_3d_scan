@@ -4,15 +4,19 @@ import sys
 import glob
 import os
 
-try:
-    Files = [sys.argv[1]]
-except:
-    Files = glob.glob("*.pcd")
-    Files = sorted(Files, key=lambda file:int(os.path.basename(file).split(".")[0].split("_")[-1]))
+Files = glob.glob("*.pcd")
+
+if(len(Files) == 0):
+    path = os.path.dirname(os.path.realpath(__file__))
+    directoryIndex = int(input("Scan directory ? " + str(glob.glob("*/"))))
+    directory = glob.glob("*/")[directoryIndex-1]
+    Files = glob.glob(path + "/" + directory + "*.pcd")
+
+Files = sorted(Files, key=lambda file:int(os.path.basename(file).split(".")[0].split("_")[-1]))
 
 axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0,0,0])
 
-for i,file in enumerate(Files):
+for i,file in enumerate(Files[1:]):
     pointCloud = o3d.io.read_point_cloud(file)
     #o3d.visualization.draw_geometries([pointCloud])
 
@@ -34,7 +38,7 @@ o3d.visualization.draw_geometries([finalPointCloud,axis])
 finalPointCloudPoints = np.asarray(finalPointCloud.points)
 centroid = np.mean(finalPointCloudPoints,axis=0)
 distances = np.linalg.norm(finalPointCloudPoints - centroid, axis=1)
-finalPointCloud.points = o3d.utility.Vector3dVector(finalPointCloudPoints[distances <= np.mean(distances) + np.std(distances)])
+finalPointCloud.points = o3d.utility.Vector3dVector(finalPointCloudPoints[distances <= np.mean(distances) + 3*np.std(distances)])
 
 obb = finalPointCloud.get_axis_aligned_bounding_box()
 print("BOUNDING BOX : ")
