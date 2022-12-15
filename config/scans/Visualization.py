@@ -1,6 +1,6 @@
 import open3d as o3d
 import numpy as np
-import sys
+import time
 import glob
 import os
 
@@ -15,6 +15,10 @@ if(len(Files) == 0):
 Files = sorted(Files, key=lambda file:int(os.path.basename(file).split(".")[0].split("_")[-1]))
 
 axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0,0,0])
+
+vis = o3d.visualization.Visualizer()
+vis.create_window()
+vis.add_geometry(axis)
 
 for i,file in enumerate(Files[1:]):
     pointCloud = o3d.io.read_point_cloud(file)
@@ -31,9 +35,14 @@ for i,file in enumerate(Files[1:]):
     finalPointCloud.points = o3d.utility.Vector3dVector(finalPointCloudPoints)
     finalPointCloud.colors = o3d.utility.Vector3dVector(finalPointCloudColors)
 
-finalPointCloud = finalPointCloud.voxel_down_sample(voxel_size=0.001)
+    vis.add_geometry(finalPointCloud)
+    vis.update_geometry(finalPointCloud)
+    vis.poll_events()
+    vis.update_renderer()
+    
+    time.sleep(0.5)
 
-o3d.visualization.draw_geometries([finalPointCloud,axis])
+finalPointCloud = finalPointCloud.voxel_down_sample(voxel_size=0.001)
 
 finalPointCloudPoints = np.asarray(finalPointCloud.points)
 centroid = np.mean(finalPointCloudPoints,axis=0)
@@ -47,4 +56,4 @@ print(obb.get_center())
 print("Dimensions :")
 print(obb.get_extent())
 
-o3d.visualization.draw_geometries([finalPointCloud,axis,obb])
+o3d.visualization.draw_geometries([axis,finalPointCloud,axis,obb])
