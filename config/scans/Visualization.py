@@ -4,6 +4,24 @@ import time
 import glob
 import os
 
+robot = input("Add robot ? y/n")
+
+if(robot == "y"):
+    from importlib import import_module
+    import sys
+    import rospkg
+
+    robotName = sys.arv[0]
+    toolName = sys.arv[0]
+    statesFiles = glob.glob("*.csv")
+
+    if "__all__" in module.__dict__:
+        names = module.__dict__["__all__"]
+    else:
+        names = [x for x in module.__dict__ if not x.startswith("_")]
+
+    globals().update({k: getattr(module, k) for k in names})
+
 Files = glob.glob("*.pcd")
 
 if(len(Files) == 0):
