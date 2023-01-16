@@ -156,7 +156,7 @@ if __name__ == "__main__":
         vis.update_renderer()
         vis.poll_events()
         
-        time.sleep(0.5)
+        time.sleep(0.25)
 
     vis.destroy_window()
 
@@ -223,24 +223,40 @@ if __name__ == "__main__":
     #finalVis2.run()
     #finalVis2.destroy_window()
 
+    from functools import partial
+
     def rotate_view(vis):
         global theta
         view_ctl = vis.get_view_control()
         view_ctl.set_front([np.cos(theta)/np.sqrt(2), np.sin(theta)/np.sqrt(2), 1/np.sqrt(2)])
-        theta += np.pi/500
+        theta += np.pi*ratio
         return False
 
-    animatedVis = o3d.visualization.Visualizer()
+    def speedUp(vis):
+        global ratio
+        ratio += 0.001
+        return False
+
+    def speedDown(vis):
+        global ratio
+        ratio -= 0.001
+        return False
+
+    animatedVis = o3d.visualization.VisualizerWithKeyCallback()
     animatedVis.create_window()
     animatedVis.add_geometry(finalPointCloud)
     animatedVis.add_geometry(obb)
 
     theta = 0
+    ratio = 0.005
     view_ctl = animatedVis.get_view_control()
     view_ctl.set_up([0,0,1])
     view_ctl.set_front([np.cos(theta)/np.sqrt(2), np.sin(theta)/np.sqrt(2), 1/np.sqrt(2)])
     view_ctl.set_lookat(obb.get_center())
 
     animatedVis.register_animation_callback(rotate_view)
+    animatedVis.register_key_callback(263, partial(speedDown))
+    animatedVis.register_key_callback(262, partial(speedUp))
+
     animatedVis.run()
     animatedVis.destroy_window()
