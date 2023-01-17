@@ -8,7 +8,7 @@ import glob
 
 #Mesh and 3D modeling packages
 import open3d as o3d
-import trimesh
+import trimesh as tr
 
 if __name__ == "__main__":
 
@@ -85,12 +85,12 @@ if __name__ == "__main__":
                 cfg[joint.name] = configuration[i]
 
             meshes = robot.visual_trimesh_fk(cfg=cfg)
-            mesh = trimesh.Trimesh()
+            mesh = tr.Trimesh()
 
             for submesh in meshes:
                 pose = meshes[submesh]
                 submesh.apply_transform(pose)
-                mesh = trimesh.util.concatenate([submesh,mesh])
+                mesh = tr.util.concatenate([submesh,mesh])
                 
             RobotMeshes.append(mesh.as_open3d)
 
