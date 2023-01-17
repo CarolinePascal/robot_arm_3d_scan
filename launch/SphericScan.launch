@@ -18,8 +18,9 @@
 	</include>
 
     <!-- TOOL SETUP -->
-    <group if="$(eval arg('tool_name') == 'cameraD435')">
-        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 1.5708 0 0 $(arg robot_name)_cameraD435 camera_link" />
+    <group if="$(eval arg('tool_name') == 'cameraD435' or arg('tool_name') == 'cameraD405')">
+        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 1.5708 0 0 $(arg robot_name)_cameraD435 camera_link" if="$(eval arg('tool_name') == 'cameraD435')"/>
+        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.009 -0.012 1.5708 0 0 $(arg robot_name)_cameraD405 camera_link" if="$(eval arg('tool_name') == 'cameraD405')"/>
         
         <!-- Depth image based methods -->
         <include file="$(find robot_arm_3d_scan)/launch/Setup_realsense_DI.launch" if="$(eval arg('method') == 'rtabmap')"/>
@@ -42,6 +43,6 @@
     <param name="environmentFileName" value="$(find robot_arm_3d_scan)/config/environments/OptiTrack_panda.yaml" if="$(eval arg('robot_name') == 'panda')"/>
     <param name="environmentFileName" value="$(find robot_arm_3d_scan)/config/environments/OptiTrack_ur.yaml" if="$(eval 'ur' in arg('robot_name'))"/>
     <node pkg="robot_arm_tools" type="robot_arm_tools_environment_node" name="robot_arm_tools_environment_node" output="screen"/>
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find robot_arm_tools)/config/RViz/3DScanSetup.rviz"/> 
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find robot_arm_3d_scan)/config/3DScanSetup.rviz"/> 
 
 </launch>
