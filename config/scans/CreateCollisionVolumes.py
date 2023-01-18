@@ -27,8 +27,8 @@ def writeSphere(yamlFile,objectName,pose,radius):
     sphere[objectName]["pose"]["rz"] = float(pose[5])
     sphere[objectName]["size"] = {}
     sphere[objectName]["size"]["radius"] = float(radius)
-    sphere[objectName]["collisions"] = "true"
-    sphere[objectName]["robot_base_collisions"] = "true"
+    sphere[objectName]["collisions"] = True
+    sphere[objectName]["robot_base_collisions"] = True
     
     with open(yamlFile, "a+") as file:
         yaml.dump(sphere, file)
@@ -47,8 +47,8 @@ def writeCylinder(yamlFile,objectName,pose,radius,height):
     cylinder[objectName]["size"] = {}
     cylinder[objectName]["size"]["radius"] = float(radius)
     cylinder[objectName]["size"]["height"] = float(height)
-    cylinder[objectName]["collisions"] = "true"
-    cylinder[objectName]["robot_base_collisions"] = "true"
+    cylinder[objectName]["collisions"] = True
+    cylinder[objectName]["robot_base_collisions"] = True
 
     with open(yamlFile, "a+") as file:
         yaml.dump(cylinder, file)
@@ -68,8 +68,8 @@ def writeBox(yamlFile,objectName,pose,dx,dy,dz):
     box[objectName]["size"]["dx"] = float(dx)
     box[objectName]["size"]["dy"] = float(dy)
     box[objectName]["size"]["dz"] = float(dz)
-    box[objectName]["collisions"] = "true"
-    box[objectName]["robot_base_collisions"] = "true"
+    box[objectName]["collisions"] = True
+    box[objectName]["robot_base_collisions"] = True
 
     print(box)
 
@@ -178,13 +178,23 @@ if __name__ == "__main__":
 
     print("Best solution found with " + str(len(collisionVolumes)) + " collision volumes")
 
-    ### Write and save collision volumes description
+    ### Write and save object description
     
     yamlFile = directory + "CollisionVolumes.yaml"
     if(os.path.isfile(yamlFile)):
         print("[WARNING] " + yamlFile + " already exists, its contents will be overwritten !")
         os.remove(yamlFile)
-        
+
+    # Add object position
+    finalPointCloudPoints = np.asarray(finalPointCloud.points)
+    centroid = np.mean(finalPointCloudPoints,axis=0)
+    distances = np.linalg.norm(finalPointCloudPoints - centroid, axis=1)
+
+    with open(yamlFile, "a+") as file:
+        yaml.dump({"objectPose" : np.append(centroid,np.zeros(3)).tolist()}, file)
+        yaml.dump({"objectSize" : float(np.max(distances))}, file)
+
+    # Add object collision volumes
     for i,volume in enumerate(collisionVolumes):
 
         r  = R.from_matrix(volume.primitive.transform[:3,:3])
