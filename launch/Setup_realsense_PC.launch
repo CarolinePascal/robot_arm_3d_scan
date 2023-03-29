@@ -1,7 +1,11 @@
 <?xml version="1.0" ?>
 <launch>   
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 1.5708 0 0 $(arg robot_name)_cameraD435 camera_link" if="$(eval arg('tool_name') == 'cameraD435')"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.009 -0.0037 1.5708 0 0 $(arg robot_name)_cameraD405 camera_link" if="$(eval arg('tool_name') == 'cameraD405')"/>
+
     <!-- CAMERA SETUP -->
-    <param name="realsense_json_file_path" value="$(find robot_arm_3d_scan)/config/realsense/HighAccuracyPreset.json"/>
+    <param name="realsense_json_file_path" value="$(find robot_arm_3d_scan)/config/realsense/MedDensityPreset.json"/>
     <param name="disparity_shift" value="5.0"/>
     <param name="depth_units" value="0.0001"/>
     <rosparam param="filters">["temporal","threshold"]</rosparam>
