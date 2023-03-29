@@ -17,23 +17,47 @@ PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuf
 
     ROS_WARN("SERVER SETUP OK");
 
-    std::vector<double> rawObjectPose;
-    if(!m_nodeHandle.getParam("rawObjectPose",rawObjectPose))
+    try
     {
-        ROS_ERROR("Unable to retrieve measurements reference pose !");
-        throw std::runtime_error("MISSING PARAMETER");
-    }
-    m_objectPose.position.x = rawObjectPose[0];
-    m_objectPose.position.y = rawObjectPose[1];
-    m_objectPose.position.z = rawObjectPose[2];
+        std::vector<double> objectPoseArray;
+        if(!m_nodeHandle.getParam("objectPose",objectPoseArray))
+        {
+            ROS_ERROR("Unable to retrieve measurements reference pose !");
+            throw std::runtime_error("MISSING PARAMETER");
+        }
+        m_objectPose.position.x = objectPoseArray[0];
+        m_objectPose.position.y = objectPoseArray[1];
+        m_objectPose.position.z = objectPoseArray[2];
 
-    if(!m_nodeHandle.getParam("radiusObject",m_radiusObject))
+        if(!m_nodeHandle.getParam("objectSize",m_objectSize))
+        {
+            ROS_ERROR("Unable to retrieve measured object radius !");
+            throw std::runtime_error("MISSING PARAMETER");
+        }
+    }
+    catch(const std::exception& e)
     {
-        ROS_ERROR("Unable to retrieve measured object radius !");
-        throw std::runtime_error("MISSING PARAMETER");
-    }
+        //Get last published raw point cloud
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+        sensor_msgs::PointCloud2ConstPtr rawPointCloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/point_cloud");
+        pcl::fromROSMsg(*rawPointCloud, *pointCloud);
 
-    m_visualTools.addSphere("collisionSphere", m_objectPose, m_radiusObject, false);    
+        //Filter obvious outliers
+        confidenceIntervalFilter(pointCloud,0.95);
+
+        //Retrive point cloud data
+        pcl::PointXYZ centroid;
+        double radius;
+
+        boundingSphereFilter(pointCloud,centroid,radius);   
+
+        m_objectPose.position.x = centroid.x;
+        m_objectPose.position.y = centroid.y;
+        m_objectPose.position.z = centroid.z;
+        m_objectSize = 2*radius; 
+    }  
+
+    m_visualTools.addSphere("collisionSphere", m_objectPose, m_objectSize/2, false);    
 }
 
 bool PointCloudServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
@@ -61,32 +85,32 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
     //Remove scan support from point cloud
     transformPointCloud(pointCloud,"world");
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr groundPointCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    //TODO Add as parameters (as Realsense based filters !)
+    /*pcl::PointCloud<pcl::PointXYZRGB>::Ptr groundPointCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
     try
     {
         //Filter gound and retrieve ground point cloud 
         groundRemovalFilter(pointCloud,groundPointCloud,0.01); 
+
+        //Retrieve ground point cloud data
+        pcl::PointXYZ center;
+        double sizeX,sizeY,sizeZ;
+        boundingBoxFilter(groundPointCloud,center,sizeX,sizeY,sizeZ);
+
+        //Update new scan support collision object
+        m_supportScanCounter++;
+
+        geometry_msgs::Pose newSupportPose;
+        newSupportPose.position.x = center.x;
+        newSupportPose.position.y = center.y;
+        newSupportPose.position.z = center.z;
+
+        m_visualTools.addBox("supportScan" + std::to_string(m_supportScanCounter),newSupportPose,sizeX,sizeY,sizeZ,false);
     }
     catch(const std::exception& e)
     {
         //continue;
-    }   
-
-    //Retrieve ground point cloud data
-    pcl::PointXYZRGB centroidPoint;
-    computeCentroid(*groundPointCloud,centroidPoint);
-    double sizeX,sizeY,sizeZ;
-    boundingBoxFilter(groundPointCloud,sizeX,sizeY,sizeZ);
-
-    //Update new scan support collision object
-    m_supportScanCounter++;
-
-    geometry_msgs::Pose newSupportPose;
-    newSupportPose.position.x = centroidPoint.x;
-    newSupportPose.position.y = centroidPoint.y;
-    newSupportPose.position.z = centroidPoint.z;
-
-    m_visualTools.addBox("supportScan" + std::to_string(m_supportScanCounter),newSupportPose,sizeX,sizeY,sizeZ,false);
+    }*/
 
     //Update new scanned object collision object
     m_visualTools.deleteObject("collisionSphere");
@@ -95,12 +119,10 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
     confidenceIntervalFilter(pointCloud,0.95);
 
     //Retrive point cloud data
-    computeCentroid(*pointCloud,centroidPoint);
+    pcl::PointXYZ centroid;
+    double radius;
 
-    double boundingRadius;
-    boundingBoxFilter(pointCloud,sizeX,sizeY,sizeZ);
-    boundingRadius = sqrt(sizeX*sizeX + sizeY*sizeY + sizeZ*sizeZ)/2;   
-    ROS_WARN("%f %f %f %f",sizeX,sizeY,sizeZ,boundingRadius); 
+    boundingSphereFilter(pointCloud,centroid,radius);   
 
     //TODO Some intelligent probabilities for epsilon
     double epsilonX,epsilonY,epsilonZ;
@@ -122,9 +144,9 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
     tf2::Matrix3x3 rotationMatrix = transform.getBasis();
 
     tf2::Vector3 delta;
-    delta.setX(centroidPoint.x  - m_objectPose.position.x);
-    delta.setY(centroidPoint.y  - m_objectPose.position.y);
-    delta.setZ(centroidPoint.z  - m_objectPose.position.z);
+    delta.setX(centroid.x  - m_objectPose.position.x);
+    delta.setY(centroid.y  - m_objectPose.position.y);
+    delta.setZ(centroid.z  - m_objectPose.position.z);
     
     delta = rotationMatrix*delta;
 
@@ -138,12 +160,13 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
     m_objectPose.position.y += delta.y();
     m_objectPose.position.z += delta.z();
 
-    if(boundingRadius >= 0.75*m_radiusObject)
+    if(2*radius >= 0.75*m_objectSize)
     {
-        m_radiusObject = boundingRadius;
+        m_objectSize = 2*radius;
     }
 
-    m_visualTools.addSphere("collisionSphere", m_objectPose, m_radiusObject, false);
+    //TODO Add collisison volumes rather than sphere !
+    m_visualTools.addSphere("collisionSphere", m_objectPose, m_objectSize/2, false);
 }
 
 int main(int argc, char *argv[])

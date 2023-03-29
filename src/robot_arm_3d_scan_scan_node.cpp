@@ -30,19 +30,19 @@ int main(int argc, char **argv)
     robot.setVelocity(0.1);
 
     //Get the object radius, pose and the trajectory radius
-    std::vector<double> rawObjectPose;
-    double radiusObject;
+    std::vector<double> objectPoseArray;
+    double objectSize;
     double radiusTrajectory;
     int trajectoryStepsNumber;
 
     ros::NodeHandle n;
-    if(!n.getParam("rawObjectPose",rawObjectPose))
+    if(!n.getParam("objectPose",objectPoseArray))
     {
-        ROS_ERROR("Unable to retrieve measurements reference pose !");
+        ROS_ERROR("Unable to retrieve measured object pose !");
         throw std::runtime_error("MISSING PARAMETER");
     }
 
-    if(!n.getParam("radiusObject",radiusObject))
+    if(!n.getParam("objectSize",objectSize))
     {
         ROS_ERROR("Unable to retrieve measured object radius !");
         throw std::runtime_error("MISSING PARAMETER");
@@ -60,17 +60,18 @@ int main(int argc, char **argv)
         throw std::runtime_error("MISSING PARAMETER");
     }
 
-    geometry_msgs::Pose poseObject;
-    poseObject.position.x = rawObjectPose[0];
-    poseObject.position.y = rawObjectPose[1];
-    poseObject.position.z = rawObjectPose[2];
-    
+    geometry_msgs::Pose objectPose;
+    objectPose.position.x = objectPoseArray[0];
+    objectPose.position.y = objectPoseArray[1];
+    objectPose.position.z = objectPoseArray[2];
+
     //Create spherical scanning waypoints poses
     std::vector<geometry_msgs::Pose> waypoints;
     
     //Initial measurement
 
-    if(robot.getToolName() == "cameraD435")
+    /*
+    if(robot.getToolName() == "cameraD435" || robot.getToolName() == "cameraD405")
     {
         ros::ServiceClient thresholdClient = n.serviceClient<robot_arm_3d_scan::FloatParameters>("threshold_filter");
         ros::ServiceClient disparityShiftClient = n.serviceClient<robot_arm_3d_scan::FloatParameters>("disparity_shift");
@@ -78,7 +79,7 @@ int main(int argc, char **argv)
         robot_arm_3d_scan::FloatParameters thresholdSrv;
         robot_arm_3d_scan::FloatParameters disparityShiftSrv;
 
-        thresholdSrv.request.parameters = std::vector<double>{0.0,1.0};
+        thresholdSrv.request.parameters = std::vector<double>{0.0,2*radiusTrajectory};
         disparityShiftSrv.request.parameters = std::vector<double>{0.0};
 
         if(thresholdClient.call(thresholdSrv) && disparityShiftClient.call(disparityShiftSrv))
@@ -87,10 +88,28 @@ int main(int argc, char **argv)
         }    
     }
 
-    sphericInclinationTrajectory(poseObject, radiusTrajectory*2, 0, 0, 2*M_PI, 1, waypoints); 
-    robot.runMeasurementRountine(waypoints,false,false,M_PI/2);
+    geometry_msgs::Pose initialPose;
 
-    if(robot.getToolName() == "cameraD435")
+    for(int i = 0; i < 4; i++)
+    {
+        initialPose = sphericPose(objectPose,radiusTrajectory*1.5,M_PI*i/2,0);
+        if(!robot.isReachable(initialPose))
+        {
+            initialPose = sphericPose(objectPose,radiusTrajectory*1.5,M_PI*i/2,M_PI);
+            if(robot.isReachable(initialPose))
+            {
+                robot.runMeasurementRoutine({initialPose},false,false,M_PI);
+                break;
+            }
+        }
+        else
+        {
+            robot.runMeasurementRoutine({initialPose},false,false,M_PI);
+            break;
+        }
+    }*/
+
+    if(robot.getToolName() == "cameraD435" || robot.getToolName() == "cameraD405")
     {
         ros::ServiceClient thresholdClient = n.serviceClient<robot_arm_3d_scan::FloatParameters>("threshold_filter");
         ros::ServiceClient disparityShiftClient = n.serviceClient<robot_arm_3d_scan::FloatParameters>("disparity_shift");
@@ -98,7 +117,7 @@ int main(int argc, char **argv)
         robot_arm_3d_scan::FloatParameters thresholdSrv;
         robot_arm_3d_scan::FloatParameters disparityShiftSrv;
 
-        thresholdSrv.request.parameters = std::vector<double>{0.0,0.5};
+        thresholdSrv.request.parameters = std::vector<double>{0.0,radiusTrajectory};
         disparityShiftSrv.request.parameters = std::vector<double>{5.0};
 
         if(thresholdClient.call(thresholdSrv) && disparityShiftClient.call(disparityShiftSrv))
@@ -109,17 +128,21 @@ int main(int argc, char **argv)
 
     moveit_msgs::CollisionObject collisionSphere = robotVisualTools.getCollisionObject("collisionSphere");
     
-    ROS_INFO("%f,%f,%f",poseObject.position.x,poseObject.position.y,poseObject.position.z);
-    poseObject = collisionSphere.primitive_poses[0];
-    ROS_INFO("%f,%f,%f",poseObject.position.x,poseObject.position.y,poseObject.position.z);
+    ROS_INFO("%f,%f,%f",objectPose.position.x,objectPose.position.y,objectPose.position.z);
+    objectPose = collisionSphere.primitive_poses[0];
+    ROS_INFO("%f,%f,%f",objectPose.position.x,objectPose.position.y,objectPose.position.z);
     
     //Main loop
     waypoints.clear();
-    sphericInclinationTrajectory(poseObject, radiusTrajectory, M_PI/3.5, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
+     
+    //TODO Find a way to custom !!
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI, 0, 2*M_PI, 1, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 + M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 - M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
+    
     //TODO Online trajectory adaptation ?
-    robot.runMeasurementRountine(waypoints,false,true,M_PI);
-
-    robot.stop();
+    robot.runMeasurementRoutine(waypoints,false,true,M_PI);
 
     //Shut down ROS node 
     ros::shutdown();
