@@ -71,11 +71,20 @@ void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, d
 /*!
  * \brief Returns the bounding box of a point cloud.
  * \param pointCloud Pointer on the point cloud to filter. 
+ * \param center Center of the bounding box.
  * \param sizeX Size of the bouding box along the X axis.
  * \param sizeY Size of the bouding box along the Y axis.
  * \param sizeZ Size of the bouding box along the Z axis.
 */
-void boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double& sizeX, double& sizeY, double& sizeZ);
+void boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl::PointXYZ& center, double& sizeX, double& sizeY, double& sizeZ);
+
+/*!
+ * \brief Returns the bounding sphere of a point cloud.
+ * \param pointCloud Pointer on the point cloud to filter. 
+ * \param center Center of the bouding sphere.
+ * \param radius Radius of the bouding sphere.
+*/
+void boundingSphereFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl::PointXYZ& center, double& radius);
 
 /*!
  * \brief Applies a cropping filter on a XYZRGB point cloud.

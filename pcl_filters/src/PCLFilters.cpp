@@ -218,14 +218,35 @@ void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, d
     RGBfilter.filter(*pointCloud);
 }
 
-void boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double& sizeX, double& sizeY, double& sizeZ)
+void boundingBoxFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl::PointXYZ& center, double& sizeX, double& sizeY, double& sizeZ)
 {
     pcl::PointXYZRGB minPoint, maxPoint;
     pcl::getMinMax3D(*pointCloud, minPoint, maxPoint);
 
+    center.x = (maxPoint.x + minPoint.x)/2;
+    center.y = (maxPoint.y + minPoint.y)/2;
+    center.z = (maxPoint.z + minPoint.z)/2;
+
     sizeX = sqrt((maxPoint.x - minPoint.x)*(maxPoint.x - minPoint.x));
     sizeY = sqrt((maxPoint.y - minPoint.y)*(maxPoint.y - minPoint.y));
     sizeZ = sqrt((maxPoint.z - minPoint.z)*(maxPoint.z - minPoint.z));
+}
+
+void boundingSphereFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl::PointXYZ& center, double& radius)
+{
+    pcl::PointXYZRGB centroid;
+    pcl::computeCentroid(*pointCloud,centroid);
+    center.x = centroid.x;
+    center.y = centroid.y;
+    center.z = centroid.z;
+
+    double tmp;
+    radius = 0;
+    for(int i = 0; i < pointCloud->points.size(); i++) 
+    {   
+        tmp = euclideanDistance(pointCloud->points[i],centroid);
+        if(tmp > radius){radius = tmp;}
+    }
 }
 
 void cropFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minX, double maxX, double minY, double maxY, double minZ, double maxZ)
@@ -241,10 +262,7 @@ void cropFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minX, 
 void confidenceIntervalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double confidenceRate)
 {
     pcl::PointXYZRGB centroid;
-    computeCentroid(*pointCloud,centroid);
-
-    double sizeX,sizeY,sizeZ;
-    boundingBoxFilter(pointCloud, sizeX, sizeY, sizeZ);
+    pcl::computeCentroid(*pointCloud,centroid);
 
     std::vector<float> distances;
     for(int i = 0; i < pointCloud->points.size(); i++) 
@@ -254,10 +272,6 @@ void confidenceIntervalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud,
 
     double mean,stdd;
     pcl::getMeanStd(distances,mean,stdd);
-    for(int i = 0; i < pointCloud->points.size(); i++) 
-    {
-        distances.push_back(euclideanDistance(pointCloud->points[i],centroid));
-    }
 
     boost::math::normal dist(0.0, 1.0);
     double q = quantile(dist, confidenceRate);
