@@ -50,7 +50,7 @@ class PointCloudServer : public MeasurementServer
         std::string m_pointCloudFrame;
 
         RobotVisualTools m_visualTools;
-        double m_radiusObject;
+        double m_objectSize;
         geometry_msgs::Pose m_objectPose;
 
         static int m_supportScanCounter;

@@ -192,7 +192,7 @@ if __name__ == "__main__":
 
     with open(yamlFile, "a+") as file:
         yaml.dump({"objectPose" : np.append(centroid,np.zeros(3)).tolist()}, file)
-        yaml.dump({"objectSize" : float(np.max(distances))}, file)
+        yaml.dump({"objectSize" : float(2*np.max(distances))}, file)
 
     # Add object collision volumes
     for i,volume in enumerate(collisionVolumes):
