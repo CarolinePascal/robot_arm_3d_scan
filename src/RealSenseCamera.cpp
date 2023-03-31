@@ -70,6 +70,14 @@ RealSenseCamera::RealSenseCamera() : m_mutex(true)
         depth_sensor.set_option(RS2_OPTION_DEPTH_UNITS, m_depthUnits);
     }
 
+    //TODO Proper integration ?
+    bool tmp;
+    if(m_nodeHandle.getParam("auto_exposure",tmp))
+    {
+        ROS_INFO("Setting up auto exposure : %d",(int)tmp);
+        depth_sensor.set_option(RS2_OPTION_ENABLE_AUTO_EXPOSURE, (int)tmp);
+    }
+
     if(m_nodeHandle.getParam("filters",m_filtersNames))
     {
         // Filters
