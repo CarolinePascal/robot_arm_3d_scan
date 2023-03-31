@@ -6,7 +6,7 @@
 
 int PointCloudServer::m_supportScanCounter = 0;
 
-PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuffer)
+PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuffer), m_groundRemoval(false)
 {
     //Launch point cloud ROS publisher
     m_pointCloudPublisher = m_nodeHandle.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("/filtered_point_cloud",1);
@@ -14,6 +14,9 @@ PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuf
     //Get point cloud frame id
     sensor_msgs::PointCloud2ConstPtr rawPointCloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/point_cloud");
     m_pointCloudFrame = rawPointCloud->header.frame_id;
+
+    ros::NodeHandle n("~");
+    n.getParam("ground_removal",m_groundRemoval);
 
     ROS_WARN("SERVER SETUP OK");
 
@@ -83,30 +86,32 @@ bool PointCloudServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::R
 void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
 {
     transformPointCloud(pointCloud,"world");
-
-    //Remove scan support from point cloud
-    //TODO Add as parameters (as Realsense based filters !)
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr groundPointCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-    //Filter gound and retrieve ground point cloud 
-    groundRemovalFilter(pointCloud,groundPointCloud,0.01); 
-
-    //When plane detection is over and a plane was detected 
-    if(groundPointCloud->points.size() > 0)
+    
+    //Optional ground removal filter !
+    if(m_groundRemoval)
     {
-        //Retrieve ground point cloud data
-        pcl::PointXYZ center;
-        double sizeX,sizeY,sizeZ;
-        boundingBoxFilter(groundPointCloud,center,sizeX,sizeY,sizeZ);
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr groundPointCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+        //Filter gound and retrieve ground point cloud 
+        groundRemovalFilter(pointCloud,groundPointCloud,0.01); 
 
-        //Update new scan support collision object
-        m_supportScanCounter++;
+        //When plane detection is over and a plane was detected 
+        if(groundPointCloud->points.size() > 0)
+        {
+            //Retrieve ground point cloud data
+            pcl::PointXYZ center;
+            double sizeX,sizeY,sizeZ;
+            boundingBoxFilter(groundPointCloud,center,sizeX,sizeY,sizeZ);
 
-        geometry_msgs::Pose newSupportPose;
-        newSupportPose.position.x = center.x;
-        newSupportPose.position.y = center.y;
-        newSupportPose.position.z = center.z;
+            //Update new scan support collision object
+            m_supportScanCounter++;
 
-        m_visualTools.addBox("supportScan" + std::to_string(m_supportScanCounter),newSupportPose,sizeX,sizeY,sizeZ,false);
+            geometry_msgs::Pose newSupportPose;
+            newSupportPose.position.x = center.x;
+            newSupportPose.position.y = center.y;
+            newSupportPose.position.z = center.z;
+
+            m_visualTools.addBox("supportScan" + std::to_string(m_supportScanCounter),newSupportPose,sizeX,sizeY,sizeZ,false);
+        }
     }
 
     //Update new scanned object collision object
