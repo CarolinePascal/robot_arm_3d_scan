@@ -53,5 +53,7 @@ class PointCloudServer : public MeasurementServer
         double m_objectSize;
         geometry_msgs::Pose m_objectPose;
 
+        bool m_groundRemoval;
+        //TODO rename ?
         static int m_supportScanCounter;
 };
