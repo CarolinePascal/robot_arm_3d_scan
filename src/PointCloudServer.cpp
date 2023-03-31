@@ -31,7 +31,7 @@ PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuf
 
         if(!m_nodeHandle.getParam("objectSize",m_objectSize))
         {
-            ROS_ERROR("Unable to retrieve measured object radius !");
+            ROS_ERROR("Unable to retrieve measured object size !");
             throw std::runtime_error("MISSING PARAMETER");
         }
     }
@@ -82,16 +82,17 @@ bool PointCloudServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::R
 
 void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
 {
-    //Remove scan support from point cloud
     transformPointCloud(pointCloud,"world");
 
+    //Remove scan support from point cloud
     //TODO Add as parameters (as Realsense based filters !)
-    /*pcl::PointCloud<pcl::PointXYZRGB>::Ptr groundPointCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-    try
-    {
-        //Filter gound and retrieve ground point cloud 
-        groundRemovalFilter(pointCloud,groundPointCloud,0.01); 
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr groundPointCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    //Filter gound and retrieve ground point cloud 
+    groundRemovalFilter(pointCloud,groundPointCloud,0.01); 
 
+    //When plane detection is over and a plane was detected 
+    if(groundPointCloud->points.size() > 0)
+    {
         //Retrieve ground point cloud data
         pcl::PointXYZ center;
         double sizeX,sizeY,sizeZ;
@@ -107,16 +108,12 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
 
         m_visualTools.addBox("supportScan" + std::to_string(m_supportScanCounter),newSupportPose,sizeX,sizeY,sizeZ,false);
     }
-    catch(const std::exception& e)
-    {
-        //continue;
-    }*/
 
     //Update new scanned object collision object
     m_visualTools.deleteObject("collisionSphere");
 
     //Filter obvious outliers
-    confidenceIntervalFilter(pointCloud,0.95);
+    confidenceIntervalFilter(pointCloud,0.99);
 
     //Retrive point cloud data
     pcl::PointXYZ centroid;

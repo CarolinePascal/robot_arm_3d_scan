@@ -67,9 +67,9 @@ void groundRemovalFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl:
         seg.segment(*inliers, *coefficients);
 
         //Case where no plane is detected
-        if (inliers->indices.size () == 0)
+        if (inliers->indices.size() == 0)
         {
-            throw std::invalid_argument("CANNOT ESTIMATE PLANAR MODEL FOR THE GIVEN DATA SET !"); 
+            break;
         }
 
         else
