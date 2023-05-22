@@ -4,7 +4,7 @@
 #include <pcl/io/pcd_io.h>
 
 //TODO set parameters values to default camera when no ROS parameter is given
-RealSenseCamera::RealSenseCamera() : m_mutex(true)
+RealSenseCamera::RealSenseCamera() : m_mutex(true), m_align(RS2_STREAM_DEPTH);
 {
     // Get the list of devices currently present on the system
     rs2::context ctx;
@@ -111,6 +111,7 @@ RealSenseCamera::RealSenseCamera() : m_mutex(true)
     }
 
     // Start the streaming pipeline for both depth and RGB data
+    //TODO Custom resolution !
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 60);
     cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_RGB8, 60);
@@ -133,6 +134,8 @@ void RealSenseCamera::publishPointcloud()
 
     // Wait for the next set of frames from the camera
     m_frames = m_pipe.wait_for_frames();
+    m_frames = m_align.process(m_frames);   //Align all frames on the depth viewport (optionnal if RGB data is not used/important)
+    
     m_depth = m_frames.get_depth_frame();
     m_color = m_frames.get_color_frame();
 

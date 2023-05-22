@@ -8,7 +8,7 @@
     <arg name="realsense_json_file_path" default="$(find robot_arm_3d_scan)/config/camera/HighAccuracyPreset.json"/>
 
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
-        <arg name="align_depth" value="true"/>
+        <arg name="align_depth" value="true"/> <!-- Remark : all frames will be transfered in the RGB viewport ! -->
         <arg name="filters" value="temporal,pointcloud"/>
         <arg name="clip_distance" value="0.5"/>
         <arg name="json_file_path" value="$(arg realsense_json_file_path)"/>

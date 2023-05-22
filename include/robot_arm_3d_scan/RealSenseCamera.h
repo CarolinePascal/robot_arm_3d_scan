@@ -63,6 +63,7 @@ class RealSenseCamera
     rs2::points m_points;
     rs2::frame m_color;
     rs2::frame m_depth;
+    rs2::align m_align;
 
     rs2::device m_device;
 
