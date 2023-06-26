@@ -4,7 +4,7 @@
 #include <pcl/io/pcd_io.h>
 
 //TODO set parameters values to default camera when no ROS parameter is given
-RealSenseCamera::RealSenseCamera() : m_mutex(true), m_align(RS2_STREAM_DEPTH);
+RealSenseCamera::RealSenseCamera() : m_mutex(true), m_align(RS2_STREAM_DEPTH)
 {
     // Get the list of devices currently present on the system
     rs2::context ctx;
