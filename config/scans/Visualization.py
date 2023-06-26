@@ -5,16 +5,47 @@ import time
 #Utility packages
 import numpy as np
 import glob
+import matplotlib.pyplot as plt
 
 #Mesh and 3D modeling packages
 import open3d as o3d
 import trimesh as tr
 
+def plotPointCloud(pointCloud, axes = None, show = True, save = True):
+
+    pointCloud = pointCloud.voxel_down_sample(voxel_size=0.005)
+    pointCloudPoints = np.asarray(pointCloud.points)
+    pointCloudColors = np.asarray(pointCloud.colors)
+
+    if(axes is None):
+        axes = plt.figure().add_subplot(projection='3d')
+
+    axes.scatter(*pointCloudPoints.T,c=pointCloudColors,s=2)
+
+    if(show):
+        extents = np.array([getattr(axes, 'get_{}lim'.format(dim))() for dim in 'xyz'])
+        sz = extents[:,1] - extents[:,0]
+        centers = np.mean(extents, axis=1)
+        maxsize = max(abs(sz))
+        r = maxsize/2
+        for ctr, dim in zip(centers, 'xyz'):
+            getattr(axes, 'set_{}lim'.format(dim))(ctr - r, ctr + r)
+        plt.show()
+
+    if(save):
+        o3d.io.write_point_cloud(os.getcwd() + "/FinalPointCloud.pcd",pointCloud)
+
+    return(axes)
+
+def plotPointCloudFromPath(pointCloudPath, axes = None, show = True):
+    pointCloud = o3d.io.read_point_cloud(pointCloudPath) 
+    return(plotPointCloud(pointCloud, axes, show))
+
 if __name__ == "__main__":
 
     ### Get point clouds
     directory = os.getcwd() + "/"
-    Files = glob.glob(directory + "*.pcd")
+    Files = glob.glob(directory + "PointCloud*.pcd")
 
     if(len(Files) == 0):
         Directories = glob.glob(os.path.dirname(os.path.realpath(__file__)) + "/*/")
@@ -25,24 +56,24 @@ if __name__ == "__main__":
             directory = Directories[0]
         Files = glob.glob(directory + "*.pcd")
 
-    Files = sorted(Files, key=lambda file:int(os.path.basename(file).split(".")[0].split("_")[-1]))
-
-    ### Get robot configurations
-    import csv
-
-    configurationsFile = glob.glob(directory + "*.csv")[0]
-    Configurations = []
-    with open(configurationsFile) as file:
-        reader = csv.reader(file, delimiter=',')
-        for row in reader:
-            Configurations.append(np.array(row[7:],dtype=float))
-    Configurations = np.array(Configurations)
+    #Files = sorted(Files, key=lambda file:int(os.path.basename(file).split(".")[0].split("_")[-1]))
 
     ### Add robot (optionnal) 
 
     addRobot = input("Add robot ? y/n")
 
     if(addRobot == "y"):
+
+        # Get robot configurations
+        import csv
+
+        configurationsFile = glob.glob(directory + "*.csv")[0]
+        Configurations = []
+        with open(configurationsFile) as file:
+            reader = csv.reader(file, delimiter=',')
+            for row in reader:
+                Configurations.append(np.array(row[7:],dtype=float))
+        Configurations = np.array(Configurations)
 
         # Get robot URDF
         import rospkg
@@ -94,7 +125,6 @@ if __name__ == "__main__":
                 
             RobotMeshes.append(mesh.as_open3d)
 
-
     ### Setting up the visualization loop
 
     vis = o3d.visualization.Visualizer()
@@ -104,11 +134,17 @@ if __name__ == "__main__":
     axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0,0,0])
     vis.add_geometry(axis)
 
-    if(len(Configurations) < len(Files)):
-        Files = Files[1:]
+    try:
+        if(len(Configurations) < len(Files)):
+            Files = Files[1:]
+    except:
+        pass
 
     for i,file in enumerate(Files):
         pointCloud = o3d.io.read_point_cloud(file)
+
+        bbox = o3d.geometry.AxisAlignedBoundingBox(min_bound=(-10, -10, 0.1), max_bound=(10, 10, 10))
+        pointCloud = pointCloud.crop(bbox)
 
         #DEBUG
         #o3d.visualization.draw_geometries([pointCloud])
@@ -134,6 +170,7 @@ if __name__ == "__main__":
         finalPointCloud = o3d.geometry.PointCloud()
         finalPointCloud.points = o3d.utility.Vector3dVector(finalPointCloudPoints)
         finalPointCloud.colors = o3d.utility.Vector3dVector(finalPointCloudColors)
+        finalPointCloud.voxel_down_sample(0.001)
 
         if(i==0):
             vis.add_geometry(finalPointCloud)
@@ -260,3 +297,5 @@ if __name__ == "__main__":
 
     animatedVis.run()
     animatedVis.destroy_window()
+
+    plotPointCloud(finalPointCloud,None,False,True)

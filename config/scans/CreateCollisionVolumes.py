@@ -9,7 +9,7 @@ import yaml
 
 #Mesh and 3D modeling packages
 import open3d as o3d
-import trimesh as tr 
+import trimesh as trimesh 
 
 #Rotation package
 from scipy.spatial.transform import Rotation as R
@@ -76,6 +76,93 @@ def writeBox(yamlFile,objectName,pose,dx,dy,dz):
     with open(yamlFile, "a+") as file:
         yaml.dump(box, file)
     
+def getCollisionVolumes(inputPointCloud, save = False, maxVolumesNumber = 5, volumesTypes = ["sphere","cylinder","box"]):
+
+    ### Create collision volumes : points clustering and volume shape optimization
+    deltaVolumes = 10e9 #Arbitrarly high value
+    collisionVolumes = []
+
+    voxelGrid = o3d.geometry.VoxelGrid.create_from_point_cloud(inputPointCloud,voxel_size=0.0001)
+    voxelGridVolume = voxelGrid.voxel_size*len(voxelGrid.get_voxels())
+
+    print("Computing object collision volumes - Maximum number of volumes : " + str(maxVolumesNumber))
+
+    pointCloudPoints = np.asarray(inputPointCloud.points)
+
+    for n in range(maxVolumesNumber):
+        #Cluster point cloud using the k means method
+        _,labels = trimesh.points.k_means(pointCloudPoints,n+1)
+        volumesSum = 0
+
+        for i in range(n+1):
+            #Get cluster and closest primitive (sphere, cylinder, box)
+            pointCloud = trimesh.PointCloud(pointCloudPoints[np.where(labels==i)])
+            tmpVoxelGrid = o3d.geometry.VoxelGrid.create_from_point_cloud(inputPointCloud,voxel_size=0.0001)
+            tmpVoxelGridVolume = tmpVoxelGrid.voxel_size*len(tmpVoxelGrid.get_voxels())
+
+            tmpBoundingVolumes = []
+            for volumeType in volumesTypes:
+                if volumeType == "sphere":
+                    tmpBoundingVolumes.append(pointCloud.bounding_sphere)
+                elif volumeType == "cylinder":
+                    tmpBoundingVolumes.append(pointCloud.bounding_cylinder)
+                else :
+                    tmpBoundingVolumes.append(pointCloud.bounding_box)
+            boundingVolume = tmpBoundingVolumes[np.argmin([volume - tmpVoxelGridVolume for volume in [tmp.volume for tmp in tmpBoundingVolumes]])]
+            
+            #Update collision volumes
+            collisionVolumes.append(boundingVolume)
+            volumesSum += boundingVolume.volume
+
+        #If the volumic approximation of the point cloud is increased : keep the lastly added collision volumes
+        if(volumesSum - voxelGridVolume < deltaVolumes):
+            deltaVolumes = volumesSum - voxelGridVolume
+            collisionVolumes = collisionVolumes[-(n+1):]
+        #Else : keep the previously added collision volumes
+        else:
+            collisionVolumes = collisionVolumes[:len(collisionVolumes) - (n+1)]
+
+    collisionVolumes = np.array(collisionVolumes)
+
+    print("Best solution found with " + str(len(collisionVolumes)) + " collision volumes")
+
+    ### Write and save object description
+    
+    yamlFile = os.getcwd() + "/CollisionVolumes.yaml"
+    if(os.path.isfile(yamlFile)):
+        print("[WARNING] " + yamlFile + " already exists, its contents will be overwritten !")
+        os.remove(yamlFile)
+
+    # Add object position
+    centroid = np.mean(pointCloudPoints,axis=0)
+    distances = np.linalg.norm(pointCloudPoints - centroid, axis=1)
+
+    with open(yamlFile, "a+") as file:
+        yaml.dump({"objectPose" : np.append(centroid,np.zeros(3)).tolist()}, file)
+        yaml.dump({"objectSize" : float(2*np.max(distances))}, file)
+
+    # Add object collision volumes
+    for i,volume in enumerate(collisionVolumes):
+
+        r  = R.from_matrix(volume.primitive.transform[:3,:3])
+        eulerAngles = r.as_euler('xyz')
+        pose = [np.round(volume.primitive.transform[0,-1],4),
+                np.round(volume.primitive.transform[1,-1],4),
+                np.round(volume.primitive.transform[2,-1],4),
+                np.round(eulerAngles[0],4),
+                np.round(eulerAngles[1],4),
+                np.round(eulerAngles[2],4)]
+
+        if(type(volume) is trimesh.primitives.Sphere):
+            writeSphere(yamlFile,"object"+str(i+1),pose,np.round(volume.primitive.radius,4))       
+        elif(type(volume) is trimesh.primitives.Cylinder):
+            writeCylinder(yamlFile,"object"+str(i+1),pose,np.round(volume.primitive.radius,4),np.round(volume.primitive.height,4))  
+        elif(type(volume) is trimesh.primitives.Box):
+            writeBox(yamlFile,"object"+str(i+1),pose,np.round(volume.primitive.extents[0],4),np.round(volume.primitive.extents[1],4),np.round(volume.primitive.extents[2],4))
+
+        print("Collision volume " + str(i+1) + "/" + str(len(collisionVolumes)))
+        print("\t" + str(volume.to_dict()))
+
 if __name__ == "__main__":
 
     ### Get point clouds
@@ -140,86 +227,4 @@ if __name__ == "__main__":
     finalPointCloud.points = o3d.utility.Vector3dVector(finalPointCloudPoints[distances <= np.mean(distances) + 3*np.std(distances)])
     finalPointCloud.colors = o3d.utility.Vector3dVector(finalPointCloudColors[distances <= np.mean(distances) + 3*np.std(distances)])
 
-    ### Create collision volumes : points clustering and volume shape optimization
-    Nmax = 5
-    deltaVolumes = 10e9 #Arbitrarly high value
-    collisionVolumes = []
-
-    voxelGrid = o3d.geometry.VoxelGrid.create_from_point_cloud(finalPointCloud,voxel_size=0.0001)
-    voxelGridVolume = voxelGrid.voxel_size*len(voxelGrid.get_voxels())
-
-    print("Computing object collision volumes - Maximum number of volumes : " + str(Nmax))
-
-    finalPointCloudPoints = np.asarray(finalPointCloud.points)
-
-    for n in range(Nmax):
-        #Cluster point cloud using the k means method
-        _,labels = tr.points.k_means(finalPointCloudPoints,n+1)
-        volumesSum = 0
-
-        for i in range(n+1):
-            #Get cluster and closest primitive (sphere, cylinder, box)
-            pointCloud = tr.PointCloud(finalPointCloudPoints[np.where(labels==i)])
-            boundingVolume = pointCloud.bounding_primitive
-            
-            #Update collision volumes
-            collisionVolumes.append(boundingVolume)
-            volumesSum += boundingVolume.volume
-
-        #If the volumic approximation of the point cloud is increased : keep the lastly added collision volumes
-        if(volumesSum - voxelGridVolume < deltaVolumes):
-            deltaVolumes = volumesSum - voxelGridVolume
-            collisionVolumes = collisionVolumes[-(n+1):]
-        #Else : keep the previously added collision volumes
-        else:
-            collisionVolumes = collisionVolumes[:len(collisionVolumes) - (n+1)]
-
-    collisionVolumes = np.array(collisionVolumes)
-
-    print("Best solution found with " + str(len(collisionVolumes)) + " collision volumes")
-
-    ### Write and save object description
-    
-    yamlFile = directory + "CollisionVolumes.yaml"
-    if(os.path.isfile(yamlFile)):
-        print("[WARNING] " + yamlFile + " already exists, its contents will be overwritten !")
-        os.remove(yamlFile)
-
-    # Add object position
-    finalPointCloudPoints = np.asarray(finalPointCloud.points)
-    centroid = np.mean(finalPointCloudPoints,axis=0)
-    distances = np.linalg.norm(finalPointCloudPoints - centroid, axis=1)
-
-    with open(yamlFile, "a+") as file:
-        yaml.dump({"objectPose" : np.append(centroid,np.zeros(3)).tolist()}, file)
-        yaml.dump({"objectSize" : float(2*np.max(distances))}, file)
-
-    # Add object collision volumes
-    for i,volume in enumerate(collisionVolumes):
-
-        r  = R.from_matrix(volume.primitive.transform[:3,:3])
-        eulerAngles = r.as_euler('xyz')
-        pose = [np.round(volume.primitive.transform[0,-1],4),
-                np.round(volume.primitive.transform[1,-1],4),
-                np.round(volume.primitive.transform[2,-1],4),
-                np.round(eulerAngles[0],4),
-                np.round(eulerAngles[1],4),
-                np.round(eulerAngles[2],4)]
-
-        if(type(volume) is tr.primitives.Sphere):
-            writeSphere(yamlFile,"object"+str(i+1),pose,np.round(volume.primitive.radius,4))       
-        elif(type(volume) is tr.primitives.Cylinder):
-            writeCylinder(yamlFile,"object"+str(i+1),pose,np.round(volume.primitive.radius,4),np.round(volume.primitive.height,4))  
-        elif(type(volume) is tr.primitives.Box):
-            writeBox(yamlFile,"object"+str(i+1),pose,np.round(volume.primitive.extents[0],4),np.round(volume.primitive.extents[1],4),np.round(volume.primitive.extents[2],4))
-
-        print("Collision volume " + str(i+1) + "/" + str(len(collisionVolumes)))
-        print("\t" + str(volume.to_dict()))
-
-    #DEBUG
-    #scene = tr.Scene()
-    #displayPointCloud = tr.points.PointCloud(finalPointCloudPoints)
-    #scene.add_geometry(displayPointCloud)
-    #for i,volume in enumerate(collisionVolumes):
-    #    scene.add_geometry(volume.as_outline())
-    #scene.show()
+    getCollisionVolumes(finalPointCloud,True)
