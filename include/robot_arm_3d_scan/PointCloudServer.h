@@ -37,7 +37,7 @@ class PointCloudServer : public MeasurementServer
         /*!
          *  \brief Triggers a point cloud measurement
          */
-        bool measure(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+        bool measure();
 
         void simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud);
 

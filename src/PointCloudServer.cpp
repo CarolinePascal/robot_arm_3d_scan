@@ -63,7 +63,7 @@ PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuf
     m_visualTools.addSphere("collisionSphere", m_objectPose, m_objectSize/2, false);    
 }
 
-bool PointCloudServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+bool PointCloudServer::measure()
 {
     //Get last published raw point cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud(new pcl::PointCloud<pcl::PointXYZRGB>);

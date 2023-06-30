@@ -19,7 +19,7 @@ RTABMAPServer::RTABMAPServer():MeasurementServer()
     }
 }
 
-bool RTABMAPServer::measure(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+bool RTABMAPServer::measure()
 {
     std_srvs::Empty srv;
 
