@@ -51,18 +51,24 @@ ground:
   offset: -0.73
   collisions: true
 
+artificial_wall:
+  type: border
+  axis: y
+  offset: 0.2
+  collisions: true
+
 table:
   type: box
   pose:
-    x: 0.85
-    y: 0.0
+    x: 0.0
+    y: -0.85
     z: -0.4
     rx: 0.0
     ry: 0.0
     rz: 0.0
   size:
     dx: 0.8
-    dy: 0.5
+    dy: 0.8
     dz: 0.8
   collisions: true
   robot_base_collisions: true
