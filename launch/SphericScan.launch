@@ -20,10 +20,10 @@
     <!-- TOOL SETUP -->
     <group if="$(eval arg('tool_name') == 'cameraD435' or arg('tool_name') == 'cameraD405')">       
         <!-- Depth image based methods -->
-        <include file="$(find robot_arm_3d_scan)/launch/Setup_realsense_DI.launch" if="$(eval arg('method') == 'rtabmap')" pass_all_args="true"/>
+        <include file="$(find robot_arm_3d_scan)/launch/Setup_realsense_depth_image.launch" if="$(eval arg('method') == 'rtabmap')" pass_all_args="true"/>
 
         <!-- Point clouds based methods -->
-        <include file="$(find robot_arm_3d_scan)/launch/Setup_realsense_PC.launch" if="$(eval arg('method') == 'none' or arg('method') == 'icp')"  pass_all_args="true"/>
+        <include file="$(find robot_arm_3d_scan)/launch/Setup_realsense_point_cloud.launch" if="$(eval arg('method') == 'none' or arg('method') == 'icp')"  pass_all_args="true"/>
     </group>
     
     <!-- MATCHING METHOD SETUP -->
