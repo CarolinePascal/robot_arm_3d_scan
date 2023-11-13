@@ -1,0 +1,23 @@
+objectPose:
+- 0.43520395193183264
+- -0.015475821997893293
+- 0.5020558723686521
+- 0.0
+- 0.0
+- 0.0
+objectSize: 0.21049125152727544
+object1:
+  collisions: true
+  pose:
+    rx: -0.7261
+    ry: 0.5137
+    rz: 1.9895
+    x: 0.4461
+    y: -0.017
+    z: 0.5091
+  robot_base_collisions: true
+  size:
+    dx: 0.118
+    dy: 0.1196
+    dz: 0.1252
+  type: box

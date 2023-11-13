@@ -1,0 +1,83 @@
+objectPose:
+- 0.726509519493464
+- -0.03454875159540972
+- 0.04365098963554156
+- 0.0
+- 0.0
+- 0.0
+objectSize: 0.09191434447770339
+object1:
+  collisions: true
+  pose:
+    rx: 2.202
+    ry: 1.4168
+    rz: -3.1069
+    x: 0.7682
+    y: -0.0468
+    z: 0.0405
+  robot_base_collisions: true
+  size:
+    dx: 0.0318
+    dy: 0.0515
+    dz: 0.1155
+  type: box
+object2:
+  collisions: true
+  pose:
+    rx: 1.7906
+    ry: 0.6594
+    rz: 3.1143
+    x: 0.6981
+    y: 0.0107
+    z: 0.0422
+  robot_base_collisions: true
+  size:
+    dx: 0.0373
+    dy: 0.0437
+    dz: 0.0614
+  type: box
+object3:
+  collisions: true
+  pose:
+    rx: 1.6722
+    ry: 0.2345
+    rz: 2.8083
+    x: 0.6856
+    y: -0.0772
+    z: 0.0411
+  robot_base_collisions: true
+  size:
+    dx: 0.0193
+    dy: 0.0321
+    dz: 0.0704
+  type: box
+object4:
+  collisions: true
+  pose:
+    rx: 2.8925
+    ry: 1.1919
+    rz: -3.1353
+    x: 0.7126
+    y: -0.0328
+    z: 0.0435
+  robot_base_collisions: true
+  size:
+    dx: 0.0243
+    dy: 0.0361
+    dz: 0.0387
+  type: box
+object5:
+  collisions: true
+  pose:
+    rx: 1.2973
+    ry: -0.8851
+    rz: 2.7353
+    x: 0.7552
+    y: -0.0168
+    z: 0.0454
+  robot_base_collisions: true
+  size:
+    dx: 0.0347
+    dy: 0.039
+    dz: 0.0776
+  type: box
