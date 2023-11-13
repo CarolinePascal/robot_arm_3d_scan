@@ -3,6 +3,9 @@ project(robot_arm_3d_scan)
 
 add_subdirectory(pcl_filters)
 
+find_package(OpenCV REQUIRED)
+include_directories ("/usr/include/opencv4/")
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -18,6 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   pcl_filters
   robot_arm_tools
+  moveit_calibration_plugins
+  cv_bridge
   message_generation
   std_msgs
 )
@@ -114,7 +119,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES robot_arm_3d_scan
-  CATKIN_DEPENDS pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros pcl_filters robot_arm_tools message_runtime
+  CATKIN_DEPENDS pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros pcl_filters robot_arm_tools message_runtime moveit_calibration_plugins cv_bridge
 #  DEPENDS system_lib
 )
 
@@ -144,10 +149,19 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_scan_node src/robot_arm_3d_scan_scan_node.cpp)
 
+add_executable(${PROJECT_NAME}_calibration_node src/robot_arm_3d_scan_calibration_node.cpp)
+
 add_executable(rtabmap_server src/RTABMAPServer.cpp)
 
 add_executable(point_cloud_server src/PointCloudServer.cpp)
 
+<<<<<<< HEAD
+=======
+add_executable(camera_calibration_server src/CameraCalibrationServer.cpp)
+
+add_executable(realsense_camera_node src/RealSenseCamera.cpp)
+
+>>>>>>> Adding dependancies and define executables
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -163,6 +177,10 @@ target_link_libraries(${PROJECT_NAME}_scan_node
   ${catkin_LIBRARIES}
 )
 
+target_link_libraries(${PROJECT_NAME}_calibration_node
+  ${catkin_LIBRARIES}
+)
+
 target_link_libraries(rtabmap_server
   ${catkin_LIBRARIES}
 )
@@ -171,6 +189,20 @@ target_link_libraries(point_cloud_server
   ${catkin_LIBRARIES}
 )
 
+<<<<<<< HEAD
+=======
+target_link_libraries(camera_calibration_server
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  yaml-cpp
+)
+
+target_link_libraries(realsense_camera_node
+  ${catkin_LIBRARIES}
+  realsense2
+)
+
+>>>>>>> Adding dependancies and define executables
 #############
 ## Install ##
 #############
