@@ -1,0 +1,76 @@
+<?xml version="1.0" ?>
+<launch>
+
+    <!-- GENERAL ARGUMENTS -->
+    <arg name="robot_name" default="ur10e"/>
+    <arg name="tool_name" default="cameraD435_offset"/>
+    <arg name="simulation" default="false"/>
+    <arg name="calibration" default="false"/>
+    <arg name="safety_distance" default="0.03"/>
+
+    <!-- ROBOT SETUP -->
+    <param name="visibilityTargetTF" value="handeye_target"/>
+	<include file="$(find robot_arm_tools)/launch/Setup_$(arg robot_name).launch">
+		<arg name="tool_name" value="$(arg tool_name)"/>
+		<arg name="simulation" value="$(arg simulation)"/>
+        <arg name="calibration" value="$(arg calibration)"/>
+		<arg name="safety_distance" value="$(arg safety_distance)"/>
+        <arg name="planner_name" value="RRTstar"/>
+	</include>
+
+    <!-- TOOL ARGUMENTS -->
+    <arg name="camera_info_topic" default="/camera/infra1/camera_info"/>
+    <arg name="camera_image_topic" default="/camera/infra1/image_rect_raw"/>
+
+    <!-- TOOL SETUP -->
+    <group if="$(eval 'cameraD435' in arg('tool_name') or 'cameraD405' in arg('tool_name'))"> 
+        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 0 -1.5708 3.1418 $(arg robot_name)_$(arg tool_name) camera_link" if="$(eval 'cameraD435' in arg('tool_name'))"/>
+        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.009 -0.0037 0 0 0 $(arg robot_name)_$(arg tool_name) camera_link" if="$(eval 'cameraD405' in arg('tool_name'))"/>      
+
+        <arg name="realsense_json_file_path" default="$(find robot_arm_3d_scan)/config/camera/HighAccuracyPreset.json"/>
+        <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+            <arg name="enable_infra1" value="true"/>
+            <arg name="enable_infra2" value="true"/>
+
+            <arg name="align_depth" value="true"/> 
+            <arg name="filters" value="temporal,pointcloud"/>
+            <arg name="clip_distance" value="0.5"/>
+            <arg name="json_file_path" value="$(arg realsense_json_file_path)"/>
+        </include>
+    </group>
+
+    <!-- TARGET ARGUMENTS -->
+    <arg name="marker_size_real" default="0.058"/>
+    <arg name="marker_separation_real" default="0.006"/>
+
+    <!-- MEASUREMENT SERVER -->
+    <param name="measurementServerName" value="/camera_calibration_server"/>
+    <param name="measurementServerStorageFolder" value="$(find robot_arm_3d_scan)/config/cameras/$(arg tool_name)/"/>
+    <param name="measurementServerDisplay" value="true"/>
+    <node pkg="robot_arm_3d_scan" type="camera_calibration_server" name="camera_calibration_server" output="screen">
+        <param name="markerSizeReal" value="$(arg marker_size_real)"/>
+        <param name="markerSeparationReal" value="$(arg marker_separation_real)"/>
+        <param name="cameraInfoTopic" value="$(arg camera_info_topic)"/>
+        <param name="cameraImageTopic" value="$(arg camera_image_topic)"/>
+    </node>
+    
+    <!-- MAIN NODE -->    
+    <param name="radiusTrajectory" value="0.2"/>
+    <param name="trajectoryStepsNumber" value="50"/> 
+    <node pkg="robot_arm_3d_scan" type="robot_arm_3d_scan_calibration_node" name="robot_arm_3d_scan_calibration_node" output="screen"/>
+
+    <!-- RVIZ -->	
+    <node pkg="robot_arm_tools" type="robot_arm_tools_environment_node" name="robot_arm_tools_environment_node" output="screen">
+        <param name="environmentFileName" value="/home/demo1/Desktop/robot_arm_3d_scan/config/environments/OptiTrack_ur10e.yaml"/>    <!--TODO Default value ?-->
+    </node>
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find robot_arm_3d_scan)/config/3DScanSetup.rviz"/> 
+
+    <!-- SENSOR SETUP -->
+    <include file="$(find robot_arm_tools)/launch/Sensor.launch" pass_all_args="true">
+        <arg name="sensor_type" value="point_cloud"/>
+        <arg name="sensor_tf" value="camera_link"/>
+        <arg name="sensor_topic" value="/camera/camera/depth/color/points"/>
+        <arg name="start_sensor_node" value="false"/>
+    </include>
+
+</launch>
