@@ -12,8 +12,6 @@
 #include <robot_arm_tools/MeasurementServer.h>
 #include <robot_arm_tools/RobotVisualTools.h>
 
-#include "pcl_filters/PCLFilters.h"
-
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
@@ -59,6 +57,8 @@ class PointCloudServer : public MeasurementServer
         RobotVisualTools m_visualTools;
         double m_objectSize;
         geometry_msgs::Pose m_objectPose;
+
+        std::vector<std::string> m_objectPrimitives;
 
         bool m_groundRemoval;
         //TODO rename ?

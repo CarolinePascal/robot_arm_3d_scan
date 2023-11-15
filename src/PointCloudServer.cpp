@@ -4,6 +4,10 @@
 #include <pcl/common/common.h>
 #include <pcl/common/centroid.h>
 
+#include "pcl_filters/PCLFilters.h"
+#include "pcl_filters/PointCloudToPrimitives.h"
+
+
 int PointCloudServer::m_supportScanCounter = 0;
 
 PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuffer), m_groundRemoval(false), m_filterChain("sensor_msgs::PointCloud2"), m_privateNodeHandle("~")
@@ -38,6 +42,8 @@ PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuf
             ROS_ERROR("Unable to retrieve measured object size !");
             throw std::runtime_error("MISSING PARAMETER");
         }
+
+        m_visualTools.addSphere("collisionSphere", m_objectPose, m_objectSize/2, false);    
     }
     catch(const std::exception& e)
     {
@@ -48,6 +54,30 @@ PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuf
         simplePointCloudFilter(pointCloud, true);
     }    
 
+    //Retrive point cloud primitives
+    std::vector<visualization_msgs::Marker> collisionPrimitives = pointCloudToPrimitives(pointCloud);
+
+    int collisionPrimitivesCounter = 0;
+    for(std::vector<visualization_msgs::Marker>::iterator it = collisionPrimitives.begin(); it != collisionPrimitives.end(); ++it)
+    {
+        collisionPrimitivesCounter++;
+        m_objectPrimitives.push_back("objectPrimitive" +  std::to_string(collisionPrimitivesCounter));
+
+        if(it->type == visualization_msgs::Marker::SPHERE)
+        {
+            m_visualTools.addSphere("objectPrimitive" +  std::to_string(collisionPrimitivesCounter), it->pose, it->scale.x/2, false); 
+        }
+
+        if(it->type == visualization_msgs::Marker::CUBE)
+        {
+            m_visualTools.addBox("objectPrimitive" +  std::to_string(collisionPrimitivesCounter), it->pose, it->scale.x, it->scale.y, it->scale.z, false); 
+        }
+
+        if(it->type == visualization_msgs::Marker::CYLINDER)
+        {
+            m_visualTools.addCylinder("objectPrimitive" +  std::to_string(collisionPrimitivesCounter), it->pose, it->scale.x/2, it->scale.z, false); 
+        }
+    }  
 }
 
 bool PointCloudServer::measure()
@@ -121,7 +151,7 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
     pcl::PointXYZ centroid;
     double radius;
 
-    boundingSphereFilter(pointCloud,centroid,radius);   
+    boundingSphereFilter(pointCloud,centroid,radius);
 
     /*if(!initialisation)
     {
@@ -179,6 +209,38 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
 
     m_nodeHandle.setParam("objectPose", std::vector<double>{m_objectPose.position.x,m_objectPose.position.y,m_objectPose.position.z,0.0,0.0,0.0});
     m_nodeHandle.setParam("objectSize", m_objectSize);
+
+    //Update new scanned object collision object
+    for(std::vector<std::string>::iterator it = m_objectPrimitives.begin(); it != m_objectPrimitives.end(); ++it)
+    {
+        m_visualTools.deleteObject(*it);
+    }
+    m_objectPrimitives.clear();
+
+    //Retrive and publish point cloud primitives
+    std::vector<visualization_msgs::Marker> collisionPrimitives = pointCloudToPrimitives(pointCloud);  
+
+    int collisionPrimitivesCounter = 0;
+    for(std::vector<visualization_msgs::Marker>::iterator it = collisionPrimitives.begin(); it != collisionPrimitives.end(); ++it)
+    {
+        collisionPrimitivesCounter++;
+        m_objectPrimitives.push_back("objectPrimitive" +  std::to_string(collisionPrimitivesCounter));
+
+        if(it->type == visualization_msgs::Marker::SPHERE)
+        {
+            m_visualTools.addSphere("objectPrimitive" +  std::to_string(collisionPrimitivesCounter), it->pose, it->scale.x/2, false); 
+        }
+
+        if(it->type == visualization_msgs::Marker::CUBE)
+        {
+            m_visualTools.addBox("objectPrimitive" +  std::to_string(collisionPrimitivesCounter), it->pose, it->scale.x, it->scale.y, it->scale.z, false); 
+        }
+
+        if(it->type == visualization_msgs::Marker::CYLINDER)
+        {
+            m_visualTools.addCylinder("objectPrimitive" +  std::to_string(collisionPrimitivesCounter), it->pose, it->scale.x/2, it->scale.z, false); 
+        }
+    }
 }
 
 int main(int argc, char *argv[])
