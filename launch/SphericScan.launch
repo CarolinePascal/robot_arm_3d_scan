@@ -27,13 +27,12 @@
     </group>
     
     <!-- MATCHING METHOD SETUP -->
-    <arg name="ground_removal" value="true"/>
+    <arg name="ground_removal" value="false"/>
     <include file="$(find robot_arm_3d_scan)/launch/$(arg method).launch" pass_all_args="true"/>
 
     <!-- MAIN NODE -->       
     <param name="measurementServerStorageFolder" value="$(find robot_arm_3d_scan)/config/scans/SphericScan_$(arg method)_$(arg calibration)/"/>
     <param name="measurementServerDisplay" value="false"/>
-
     <rosparam command="load" file="$(find robot_arm_3d_scan)/config/AcquisitionParameters.yaml"/>
     <node pkg="robot_arm_3d_scan" type="robot_arm_3d_scan_scan_node" name="robot_arm_3d_scan_scan_node" output="screen"/>
 
