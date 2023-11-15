@@ -57,6 +57,15 @@ void statisticalOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud
 void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud);
 
 /*!
+ * \brief Applies a downsampling filter on a XYZRGB point cloud.
+ * \param pointCloud Pointer on the point cloud to filter.
+ * \param leafSizeX Leaf size along the X axis.
+ * \param leafSizeY Leaf size along the Y axis.
+ * \param leafSizeZ Leaf size along the Z axis.
+*/
+void downsampleFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double leafSizeX, double leafSizeY, double leafSizeZ);
+
+/*!
  * \brief Applies a color threshold filter on a XYZRGB point cloud.
  * \param pointCloud Pointer on the point cloud to filter.
  * \param minR Minimum red value.

@@ -3,6 +3,7 @@
 #include <pcl/filters/conditional_removal.h>
 #include <pcl/filters/radius_outlier_removal.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/voxel_grid.h>
 
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
@@ -188,6 +189,15 @@ void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
     radiusFilter.setMinNeighborsInRadius(10);
     radiusFilter.setKeepOrganized(true);
     radiusFilter.filter(*pointCloud);
+}
+
+void downsampleFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double leafSizeX, double leafSizeY, double leafSizeZ)
+{
+    //Downsampling filter => Reduce the number of points in the point cloud
+    pcl::VoxelGrid<pcl::PointXYZRGB> voxelGrid;
+    voxelGrid.setInputCloud(pointCloud);
+    voxelGrid.setLeafSize(leafSizeX,leafSizeY,leafSizeZ);
+    voxelGrid.filter(*pointCloud);
 }
 
 void RGBFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double minR, double maxR, double minG, double maxG, double minB, double maxB)
