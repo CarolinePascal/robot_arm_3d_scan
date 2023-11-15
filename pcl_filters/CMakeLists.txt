@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf2
   tf2_ros
+  visualization_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -108,7 +109,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES pcl_filters
-  CATKIN_DEPENDS pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros
+  CATKIN_DEPENDS pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -126,6 +127,7 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
   src/PCLFilters.cpp
+  src/PointCloudToPrimitives.cpp
 )
 
 ## Add cmake target dependencies of the library
