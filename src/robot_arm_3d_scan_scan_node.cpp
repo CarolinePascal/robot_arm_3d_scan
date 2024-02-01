@@ -36,18 +36,6 @@ int main(int argc, char **argv)
     int trajectoryStepsNumber;
 
     ros::NodeHandle n;
-    if(!n.getParam("objectPose",objectPoseArray))
-    {
-        ROS_ERROR("Unable to retrieve measured object pose !");
-        throw std::runtime_error("MISSING PARAMETER");
-    }
-
-    if(!n.getParam("objectSize",objectSize))
-    {
-        ROS_ERROR("Unable to retrieve measured object radius !");
-        throw std::runtime_error("MISSING PARAMETER");
-    }
-
     if(!n.getParam("radiusTrajectory",radiusTrajectory))
     {
         ROS_ERROR("Unable to retrieve trajectory radius !");
@@ -57,6 +45,16 @@ int main(int argc, char **argv)
     if(!n.getParam("trajectoryStepsNumber",trajectoryStepsNumber))
     {
         ROS_ERROR("Unable to retrieve trajectory steps number !");
+        throw std::runtime_error("MISSING PARAMETER");
+    }
+    if(!n.getParam("objectPose",objectPoseArray))
+    {
+        ROS_ERROR("Unable to retrieve measured object pose !");
+        throw std::runtime_error("MISSING PARAMETER");
+    }
+    if(!n.getParam("objectSize",objectSize))
+    {
+        ROS_ERROR("Unable to retrieve measured object size !");
         throw std::runtime_error("MISSING PARAMETER");
     }
 
@@ -69,8 +67,6 @@ int main(int argc, char **argv)
     std::vector<geometry_msgs::Pose> waypoints;
     
     //Initial measurement
-
-    /*
     if(robot.getToolName() == "cameraD435" || robot.getToolName() == "cameraD405")
     {
         ros::ServiceClient thresholdClient = n.serviceClient<robot_arm_3d_scan::FloatParameters>("threshold_filter");
@@ -88,26 +84,8 @@ int main(int argc, char **argv)
         }    
     }
 
-    geometry_msgs::Pose initialPose;
-
-    for(int i = 0; i < 4; i++)
-    {
-        initialPose = sphericPose(objectPose,radiusTrajectory*1.5,M_PI*i/2,0);
-        if(!robot.isReachable(initialPose))
-        {
-            initialPose = sphericPose(objectPose,radiusTrajectory*1.5,M_PI*i/2,M_PI);
-            if(robot.isReachable(initialPose))
-            {
-                robot.runMeasurementRoutine({initialPose},false,false,M_PI);
-                break;
-            }
-        }
-        else
-        {
-            robot.runMeasurementRoutine({initialPose},false,false,M_PI);
-            break;
-        }
-    }*/
+    sphericInclinationTrajectory(objectPose, 1.5*radiusTrajectory, 0, 0, 2*M_PI, 1, waypoints);
+    robot.runMeasurementRoutine(waypoints,false,true,M_PI,false);
 
     if(robot.getToolName() == "cameraD435" || robot.getToolName() == "cameraD405")
     {
@@ -136,13 +114,18 @@ int main(int argc, char **argv)
     waypoints.clear();
      
     //TODO Find a way to custom !!
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI, 0, 2*M_PI, 1, waypoints);
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 + M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 - M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
+    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI, 0, 2*M_PI, 1, waypoints);
+    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 + M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
+    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
+    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 - M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
     
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, 0, 0, 2*M_PI, 1, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/6, 0, 2*M_PI, trajectoryStepsNumber/3, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/4, 0, 2*M_PI, trajectoryStepsNumber/3, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/3, 0, 2*M_PI, trajectoryStepsNumber/3, waypoints);
+
     //TODO Online trajectory adaptation ?
-    robot.runMeasurementRoutine(waypoints,false,true,M_PI);
+    robot.runMeasurementRoutine(waypoints,false,true,M_PI,false);
 
     //Shut down ROS node 
     ros::shutdown();
