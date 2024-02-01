@@ -7,6 +7,12 @@
 
 #include <robot_arm_tools/RobotVisualTools.h>
 
+#include <dynamic_reconfigure/Config.h>
+#include <dynamic_reconfigure/IntParameter.h>
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
+
 #define MIN_TRANSFORM 4
 
 CameraCalibrationServer::CameraCalibrationServer() : MeasurementServer(), m_tfListener(m_tfBuffer), m_targetSpinner(1,&m_targetQueue), m_targetLoader("moveit_calibration_plugins", "moveit_handeye_calibration::HandEyeTargetBase"), m_solverLoader("moveit_calibration_plugins", "moveit_handeye_calibration::HandEyeSolverBase")
@@ -22,7 +28,7 @@ CameraCalibrationServer::CameraCalibrationServer() : MeasurementServer(), m_tfLi
         ROS_WARN("Unable to retrieve robot base TF name, defaulting to world !");
         m_baseTF = "world";
     }
-
+    
     //Setup camera
     ros::NodeHandle privateNodeHandle("~");
     if(!privateNodeHandle.getParam("cameraInfoTopic",m_cameraInfoTopic))
@@ -34,6 +40,23 @@ CameraCalibrationServer::CameraCalibrationServer() : MeasurementServer(), m_tfLi
     {
         ROS_WARN("Unable to retrieve camera image topic name !");
         throw std::runtime_error("MISSING PARAMETER");
+    }
+    privateNodeHandle.param<std::string>("cameraEmitterParameter",m_cameraEmitterParameterService,"");
+    std::size_t tmp = m_cameraEmitterParameterService.find_last_of("/\\");
+    m_cameraEmitterParameterName = m_cameraEmitterParameterService.substr(tmp+1);
+    m_cameraEmitterParameterService = m_cameraEmitterParameterService.substr(0,tmp) + "/set_parameters";
+
+    if(m_cameraEmitterParameterName != "")
+    {
+        m_cameraEmitterClient = m_nodeHandle.serviceClient<dynamic_reconfigure::Reconfigure>(m_cameraEmitterParameterService);
+        ROS_WARN("%s %s",m_cameraEmitterParameterService.c_str(),m_cameraEmitterParameterName.c_str());
+        m_cameraEmitterClient.waitForExistence();
+
+        dynamic_reconfigure::IntParameter cameraEmitterClientParam;
+        dynamic_reconfigure::Config cameraEmitterClientConf;
+        cameraEmitterClientParam.name = m_cameraEmitterParameterName;
+        cameraEmitterClientConf.ints.push_back(cameraEmitterClientParam);
+        m_cameraEmitterClientSrv.request.config = cameraEmitterClientConf;
     }
 
     //Setup target
@@ -122,24 +145,24 @@ CameraCalibrationServer::CameraCalibrationServer() : MeasurementServer(), m_tfLi
         ROS_WARN("Could not retrieve target - camera sensor transform !");
         throw std::runtime_error("INVALID TRANSFORM");  
     }
-
-    /*
-    RobotVisualTools robotVisualTools;
-
-    publishTransforms();
-    geometry_msgs::TransformStamped tmp = m_tfBuffer.lookupTransform("world", "handeye_target", ros::Time(0), ros::Duration(5.0));
-
-    geometry_msgs::Pose targetPose;
-    targetPose.position.x = tmp.transform.translation.x;
-    targetPose.position.y = tmp.transform.translation.y;
-    targetPose.position.z = tmp.transform.translation.z;
-    targetPose.orientation = tmp.transform.rotation;
-    robotVisualTools.addBox("target",targetPose,0.5,0.5,0.005,false,false);
-    */
 }
 
 bool CameraCalibrationServer::measure()
 {
+    //Stop camera infrared emitter
+    if(m_cameraEmitterParameterName != "")
+    {
+        m_cameraEmitterClientSrv.request.config.ints[0].value = 0;
+        if(!m_cameraEmitterClient.call(m_cameraEmitterClientSrv))
+        {
+            ROS_WARN("Could not stop camera infrared emitter !");
+        }
+        else
+        {
+            ros::WallDuration(1.0).sleep();
+        }
+    }
+
     //Get new target pose
     double startTime = ros::WallTime::now().toSec();
 
@@ -150,6 +173,16 @@ bool CameraCalibrationServer::measure()
         continue;
     }
     m_targetSpinner.stop();
+
+    //Restart camera infrared emitter
+    if(m_cameraEmitterParameterName != "")
+    {
+        m_cameraEmitterClientSrv.request.config.ints[0].value = 1;
+        if(!m_cameraEmitterClient.call(m_cameraEmitterClientSrv))
+        {
+            ROS_WARN("Could not start camera infrared emitter !");
+        }
+    }
 
     if(!m_measurementDone)
     {
@@ -202,18 +235,44 @@ bool CameraCalibrationServer::measure()
 
     // Calculate reprojection error
     std::pair<double, double> reprojectionError  = m_solver->getReprojectionError(m_FlangeBaseTransforms,m_TargetCameraTransforms,tf2::transformToEigen(m_CameraFlangeTransform), moveit_handeye_calibration::SensorMountType(m_setupType));
-    
-    CameraFlangeTransformStorageFile["reprojectionError"]["position"] = reprojectionError.first;
-    CameraFlangeTransformStorageFile["reprojectionError"]["orientation"] = reprojectionError.second;
+
+    //BUG : https://github.com/ros-planning/moveit_calibration/issues/136
+    double positionError = reprojectionError.second;
+    double orientationError = reprojectionError.first;
+
+    CameraFlangeTransformStorageFile["reprojectionError"]["position"] = positionError;
+    CameraFlangeTransformStorageFile["reprojectionError"]["orientation"] = orientationError;
 
     //Close file
     std::ofstream fout(m_measurementServerStorageFolder + "CameraFlangeTransform.yaml");   
     fout << CameraFlangeTransformStorageFile;
 
+    //Save current frame (for post-processing)
+    if(!cv::imwrite(cv::String(m_measurementServerStorageFolder + "Frame_" + std::to_string(m_measurementServerCounter) + ".png"), m_currentFrame->image))
+    {
+        ROS_WARN("Could not save current frame !");
+    }
+    else
+    {
+        ROS_INFO("Current frame saved at %s", (m_measurementServerStorageFolder + "Frame_" + std::to_string(m_measurementServerCounter) + ".png").c_str());
+    }
+
     if(m_measurementServerDisplay)
     {
         ROS_INFO("Camera - Flange transform : X: %f, Y: %f, Z: %f, RX: %f, RY: %f, RZ: %f", m_CameraFlangeTransform.transform.translation.x, m_CameraFlangeTransform.transform.translation.y, m_CameraFlangeTransform.transform.translation.z, roll, pitch, yaw);
-        ROS_INFO("Reprojection error : %f m, %f rad", reprojectionError.first, reprojectionError.second);
+        ROS_INFO("Reprojection error : %f m, %f rad", positionError, orientationError);
+
+        //Display frame with feature points
+        if(!m_target->createTargetImage(m_currentFrame->image))
+        {
+            ROS_WARN("Could not display current frame !");
+        }
+        else
+        {
+            cv::imshow("Current frame", m_currentFrame->image);
+            cv::waitKey(2000);
+            cv::destroyAllWindows();
+        }
     }
 
     return(success);

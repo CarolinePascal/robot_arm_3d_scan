@@ -23,6 +23,8 @@
 #include <moveit/handeye_calibration_target/handeye_target_base.h>
 #include <moveit/handeye_calibration_solver/handeye_solver_base.h>
 
+#include <dynamic_reconfigure/Reconfigure.h>
+
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem.hpp>
 
@@ -72,6 +74,10 @@ class CameraCalibrationServer : public MeasurementServer
         std::string m_flangeTF, m_cameraTF, m_baseTF;
 
         std::string m_cameraInfoTopic, m_cameraImageTopic;
+        
+        std::string m_cameraEmitterParameterName, m_cameraEmitterParameterService;
+        ros::ServiceClient m_cameraEmitterClient;
+        dynamic_reconfigure::Reconfigure m_cameraEmitterClientSrv;
 
         tf2_ros::Buffer m_tfBuffer;
         tf2_ros::TransformListener m_tfListener;
@@ -91,11 +97,12 @@ class CameraCalibrationServer : public MeasurementServer
 
         geometry_msgs::TransformStamped m_TargetCameraTransform, m_CameraFlangeTransform, m_FlangeBaseTransform;
 
+        cv_bridge::CvImagePtr m_currentFrame;
         void targetCallback(const sensor_msgs::Image::ConstPtr& msg)
         {
-            cv_bridge::CvImagePtr tmp = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
+            m_currentFrame = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);
                      
-            if(m_target->detectTargetPose(tmp->image))
+            if(m_target->detectTargetPose(m_currentFrame->image))
             {
                 m_TargetCameraTransform = m_target->getTransformStamped(m_cameraTF);
                 m_measurementDone = true;
