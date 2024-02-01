@@ -33,6 +33,7 @@ int main(int argc, char **argv)
     //Get trajectory parameters
     double radiusTrajectory;
     int trajectoryStepsNumber;
+    std::string calibrationTargetTF;
 
     ros::NodeHandle n;
     if(!n.getParam("radiusTrajectory",radiusTrajectory))
@@ -46,6 +47,7 @@ int main(int argc, char **argv)
         ROS_ERROR("Unable to retrieve trajectory steps number !");
         throw std::runtime_error("MISSING PARAMETER");
     }
+    n.param<std::string>("calibrationTargetTF", calibrationTargetTF, "handeye_target");
 
     //Wait for the target to show up...
     tf2_ros::Buffer tfBuffer;
@@ -55,7 +57,7 @@ int main(int argc, char **argv)
     {
         try
         {
-            transformStamped = tfBuffer.lookupTransform("world", "handeye_target", ros::Time::now(), ros::Duration(3.0));
+            transformStamped = tfBuffer.lookupTransform("world", calibrationTargetTF, ros::Time::now(), ros::Duration(3.0));
             break;
         }
         catch(tf2::TransformException &e)
@@ -71,14 +73,11 @@ int main(int argc, char **argv)
     tf2::Matrix3x3 matrix(quaternion);
     tf2::Vector3 X = matrix.getColumn(0);
     tf2::Vector3 Y = matrix.getColumn(1);
-    ROS_INFO("%f %f %f",X[0],X[1],X[2]);
-    ROS_INFO("%f %f %f",Y[0],Y[1],Y[2]);
     
     objectPose.position.x = X[0]*0.075 + Y[0]*0.1 + transformStamped.transform.translation.x;
     objectPose.position.y = X[1]*0.075 + Y[1]*0.1 + transformStamped.transform.translation.y;
-    objectPose.position.z = X[2]*0.075 + Y[2]*0.1 + transformStamped.transform.translation.z + 0.1;
-    ROS_INFO("%f %f %f",transformStamped.transform.translation.x,transformStamped.transform.translation.y,transformStamped.transform.translation.z);
-    ROS_INFO("%f %f %f",objectPose.position.x, objectPose.position.y, objectPose.position.z);
+    objectPose.position.z = X[2]*0.075 + Y[2]*0.1 + transformStamped.transform.translation.z;
+    robotVisualTools.addBox("target",objectPose,abs(X[0]*0.15 + Y[0]*0.2),abs(X[1]*0.15 + Y[1]*0.2),0.005,false,false);
 
     //Create spherical scanning waypoints poses
     std::vector<geometry_msgs::Pose> waypoints;
@@ -90,7 +89,7 @@ int main(int argc, char **argv)
     sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/3, 0, 2*M_PI, trajectoryStepsNumber/3, waypoints);
     
     //TODO Online trajectory adaptation ?
-    robot.runMeasurementRoutine(waypoints,false,true,M_PI);
+    robot.runMeasurementRoutine(waypoints,false,true,M_PI,false);
 
     //Shut down ROS node 
     ros::shutdown();
