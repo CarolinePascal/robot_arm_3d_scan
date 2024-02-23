@@ -4,7 +4,6 @@ project(robot_arm_3d_scan)
 add_subdirectory(pcl_filters)
 
 find_package(OpenCV REQUIRED)
-include_directories ("/usr/include/opencv4/")
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -131,7 +130,8 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
-  ${catkin_INCLUDE_DIRS}}
+  ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -155,13 +155,8 @@ add_executable(rtabmap_server src/RTABMAPServer.cpp)
 
 add_executable(point_cloud_server src/PointCloudServer.cpp)
 
-<<<<<<< HEAD
-=======
 add_executable(camera_calibration_server src/CameraCalibrationServer.cpp)
 
-add_executable(realsense_camera_node src/RealSenseCamera.cpp)
-
->>>>>>> Adding dependancies and define executables
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -189,20 +184,12 @@ target_link_libraries(point_cloud_server
   ${catkin_LIBRARIES}
 )
 
-<<<<<<< HEAD
-=======
 target_link_libraries(camera_calibration_server
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
   yaml-cpp
 )
 
-target_link_libraries(realsense_camera_node
-  ${catkin_LIBRARIES}
-  realsense2
-)
-
->>>>>>> Adding dependancies and define executables
 #############
 ## Install ##
 #############
