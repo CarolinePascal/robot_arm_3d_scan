@@ -23,28 +23,16 @@
 	</include>
 
     <!-- TOOL ARGUMENTS -->
-    <arg name="camera_info_topic" default="/camera/infra1/camera_info"/>
-    <arg name="camera_image_topic" default="/camera/infra1/image_rect_raw"/>
+    <arg name="camera_name" default="infra1"/>
+    <arg name="camera_info_topic" default="/$(arg camera_name)"/>
+    <arg name="camera_image_topic" default="/$(arg camera_name)_camera_info"/>
     <arg name="camera_emitter_parameter" default="/camera/stereo_module/emitter_enabled"/>
 
     <!-- TOOL SETUP -->
-    <group if="$(eval 'cameraD435' in arg('tool_name') or 'cameraD405' in arg('tool_name'))"> 
-        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 0 -1.5708 3.1418 $(arg robot_name)_$(arg tool_name) camera_link" if="$(eval 'cameraD435' in arg('tool_name'))"/>
-        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.009 -0.0037 0 0 0 $(arg robot_name)_$(arg tool_name) camera_link" if="$(eval 'cameraD405' in arg('tool_name'))"/>      
-
-        <arg name="realsense_json_file_path" default="$(find robot_arm_3d_scan)/config/realsense/HighAccuracyPreset.json"/>
-        <include file="$(find realsense2_camera)/launch/rs_camera.launch">
-            <arg name="enable_infra1" value="true"/>
-            <arg name="enable_infra2" value="true"/>
-            <arg name="enable_pointcloud" value="true"/>
-
-            <arg name="filters" value="temporal,pointcloud"/>
-            <arg name="clip_distance" value="0.5"/>
-            <arg name="json_file_path" value="$(arg realsense_json_file_path)"/>
-        </include>
-    </group>
+    <include file="$(find robot_arm_3d_scan)/launch/Setup_cameraD4xx.launch" pass_all_args="true" if="$(eval 'cameraD4' in arg('tool_name'))"/>
 
     <!-- TARGET ARGUMENTS -->
+    <!-- TODO : separate configuration file ? -->
     <arg name="marker_size_real" default="0.058"/>
     <arg name="marker_separation_real" default="0.006"/>
 

@@ -5,12 +5,15 @@
     <arg name="tool_name" default=""/>
 
     <!-- GENERIC REMAP OF TOPICS NAMES -->
-    <remap from="/camera/color/image_raw"                  to="/rgb"/>
-    <remap from="/camera/aligned_depth_to_color/image_raw" to="/depth"/>
-    <remap from="/camera/color/camera_info"                to="/camera_info"/>
-    <remap from="/camera/depth/color/points"               to="/point_cloud"/>
-    <remap from="/camera/infra1/image_raw"                 to="/infra1"/>
-    <remap from="/camera/infra2/image_raw"                 to="/infra2"/>
+    <remap from="/camera/color/image_raw"                       to="/color"/>
+    <remap from="/camera/color/camera_info"                     to="/color_camera_info"/>
+    <remap from="/camera/aligned_depth_to_color/image_raw"      to="/depth"/>
+    <remap from="/camera/aligned_depth_to_color/camera_info"    to="/depth_camera_info"/>
+    <remap from="/camera/depth/color/points"                    to="/point_cloud"/>
+    <remap from="/camera/infra1/image_raw"                      to="/infra1"/>
+    <remap from="/camera/infra1/camera_info"                    to="/infra1_camera_info"/>
+    <remap from="/camera/infra2/image_raw"                      to="/infra2"/>
+    <remap from="/camera/infra2/camera_info"                    to="/infra2_camera_info"/>
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 3.1415 -1.5708 0 $(arg robot_name)_cameraD435 camera_link" if="$(eval arg('tool_name') == 'cameraD435')"/>
     <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.009 -0.0037 3.1415 -1.5708 0 $(arg robot_name)_cameraD405 camera_link" if="$(eval arg('tool_name') == 'cameraD405')"/>
