@@ -1,0 +1,53 @@
+<?xml version="1.0" ?>
+<launch>
+    
+    <arg name="robot_name" default=""/>
+    <arg name="tool_name" default=""/>
+
+    <!-- GENERIC REMAP OF TOPICS NAMES -->
+    <remap from="/camera/color/image_raw"                  to="/rgb"/>
+    <remap from="/camera/aligned_depth_to_color/image_raw" to="/depth"/>
+    <remap from="/camera/color/camera_info"                to="/camera_info"/>
+    <remap from="/camera/depth/color/points"               to="/point_cloud"/>
+    <remap from="/camera/infra1/image_raw"                 to="/infra1"/>
+    <remap from="/camera/infra2/image_raw"                 to="/infra2"/>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 3.1415 -1.5708 0 $(arg robot_name)_cameraD435 camera_link" if="$(eval arg('tool_name') == 'cameraD435')"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.009 -0.0037 3.1415 -1.5708 0 $(arg robot_name)_cameraD405 camera_link" if="$(eval arg('tool_name') == 'cameraD405')"/>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 0 0 3.1415 -1.5708 0 world camera_link" if="$(eval arg('tool_name') == '' and arg('robot_name') == '')"/>
+
+    <!-- CAMERA SETUP -->
+    <!--<arg name="realsense_json_file_path" default="$(find robot_arm_3d_scan)/config/realsense/ShortRangePreset.json"/>-->
+    <arg name="realsense_json_file_path" default="$(find robot_arm_3d_scan)/config/realsense/MedDensityPreset.json"/>
+
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+
+        <arg name="depth_width" value="848"/>
+        <arg name="depth_height" value="480"/>
+        <arg name="enable_depth" value="true"/>
+      
+        <arg name="infra_width" value="848"/>
+        <arg name="infra_height" value="480"/>
+        <arg name="enable_infra1" value="true"/>
+        <arg name="enable_infra2" value="true"/>
+      
+        <arg name="color_width" value="848"/>
+        <arg name="color_height" value="480"/>
+        <arg name="enable_color" value="true"/>
+
+        <arg name="enable_pointcloud" value="true"/>
+        <arg name="enable_sync" value="true"/>
+        <arg name="align_depth" value="true"/>  <!-- Remark : all frames will be transfered in the RGB viewport ! -->
+
+        <arg name="json_file_path" value="$(arg realsense_json_file_path)"/>
+
+        <!--<arg name="filters" value="decimation,disparity,spatial,temporal,disparity,hole_filling"/>-->
+        <arg name="filters" value="decimation,disparity,spatial,temporal,disparity"/>
+
+        <arg name="clip_distance" value="1.0"/>
+        <arg name="disparity_shift" value="10"/>
+        <arg name="depth_units" value="0.0001"/>
+    </include>
+
+</launch>

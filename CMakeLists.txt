@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.0.2)
 project(robot_arm_3d_scan)
 
 add_subdirectory(pcl_filters)
-find_library(REALSENSE2_FOUND realsense2 REQUIRED)
-if(NOT REALSENSE2_FOUND)
-    SET(REALSENSE2_FOUND "realsense2")
-    message(WARN "Failed to find_library(realsense2)")
-endif()
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -153,8 +148,6 @@ add_executable(rtabmap_server src/RTABMAPServer.cpp)
 
 add_executable(point_cloud_server src/PointCloudServer.cpp)
 
-add_executable(realsense_camera_node src/RealSenseCamera.cpp)
-
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -163,7 +156,7 @@ add_executable(realsense_camera_node src/RealSenseCamera.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(realsense_camera_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+## add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_scan_node
@@ -176,11 +169,6 @@ target_link_libraries(rtabmap_server
 
 target_link_libraries(point_cloud_server
   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(realsense_camera_node
-  ${catkin_LIBRARIES}
-  realsense2
 )
 
 #############
