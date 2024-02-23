@@ -119,7 +119,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES robot_arm_3d_scan
-  CATKIN_DEPENDS laser_geometry pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros pcl_filters robot_arm_tools
+  CATKIN_DEPENDS pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros pcl_filters robot_arm_tools message_runtime
 #  DEPENDS system_lib
 )
 
@@ -131,7 +131,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
-  ${catkin_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}}
 )
 
 ## Declare a C++ library

@@ -8,7 +8,6 @@ project(pcl_filters)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  laser_geometry
   pcl_conversions
   pcl_msgs
   pcl_ros
@@ -109,7 +108,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES pcl_filters
-  CATKIN_DEPENDS laser_geometry pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros
+  CATKIN_DEPENDS pcl_conversions pcl_msgs pcl_ros roscpp tf2 tf2_ros
 #  DEPENDS system_lib
 )
 
