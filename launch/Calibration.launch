@@ -5,27 +5,32 @@
     <arg name="calibration_target_TF" value="handeye_target"/>
 
     <!-- GENERAL ARGUMENTS -->
-    <arg name="robot_name" default="ur10e"/>
-    <arg name="tool_name" default="cameraD435_offset"/>
-    <arg name="simulation" default="false"/>
+    <arg name="robot_name" default="panda"/>
+    <arg name="tool_name" default="cameraD405"/>
+    <arg name="simulation" default="true"/>
     <arg name="calibration" default="true"/>
-    <arg name="safety_distance" default="0.03"/>
+    <arg name="safety_distance" default="0.05"/>
+
+    <arg name="flange_link_name" default="panda_link8"/>
+    <arg name="base_link_name" default="panda_link0"/>
+    <param name="flangeLinkName" value="$(arg flange_link_name)"/>
+    <param name="baseLinkName" value="$(arg base_link_name)"/>
 
     <!-- ROBOT SETUP -->
-    <param name="visibilityTFName" value="$(arg calibration_target_TF)"/>
 	<include file="$(find robot_arm_tools)/launch/Setup_$(arg robot_name).launch">
 		<arg name="tool_name" value="$(arg tool_name)"/>
 		<arg name="simulation" value="$(arg simulation)"/>
         <arg name="calibration" value="$(arg calibration)"/>
 		<arg name="safety_distance" value="$(arg safety_distance)"/>
         <arg name="planner_name" value="RRTstar"/>
+        <arg name="planner_objective" value="MaximizeMinClearanceObjective"/>
         <!--<arg name="kinematics_solver" value="bio_ik/BioIKKinematicsPlugin"/>-->
 	</include>
 
     <!-- TOOL ARGUMENTS -->
     <arg name="camera_name" default="infra1"/>
-    <arg name="camera_info_topic" default="/$(arg camera_name)"/>
-    <arg name="camera_image_topic" default="/$(arg camera_name)_camera_info"/>
+    <arg name="camera_info_topic" default="/$(arg camera_name)_camera_info"/>
+    <arg name="camera_image_topic" default="/$(arg camera_name)"/>
     <arg name="camera_emitter_parameter" default="/camera/stereo_module/emitter_enabled"/>
 
     <!-- TOOL SETUP -->
@@ -33,38 +38,46 @@
 
     <!-- TARGET ARGUMENTS -->
     <!-- TODO : separate configuration file ? -->
-    <arg name="marker_size_real" default="0.058"/>
-    <arg name="marker_separation_real" default="0.006"/>
+    <arg name="marker_size_real" default="0.01975"/>
+    <arg name="marker_separation_real" default="0.00195"/>
+    <arg name="markers_X" default="9"/>
+    <arg name="markers_Y" default="12"/>
 
     <!-- MEASUREMENT SERVER -->
-    <param name="calibrationTargetTF" value="$(arg calibration_target_TF)"/>
     <param name="measurementServerName" value="/camera_calibration_server"/>
     <param name="measurementServerStorageFolder" value="$(find robot_arm_3d_scan)/config/cameras/$(arg tool_name)_$(arg calibration)/"/>
     <param name="measurementServerDisplay" value="true"/>
     <node pkg="robot_arm_3d_scan" type="camera_calibration_server" name="camera_calibration_server" output="screen">
         <param name="markerSizeReal" value="$(arg marker_size_real)"/>
         <param name="markerSeparationReal" value="$(arg marker_separation_real)"/>
+        <param name="markersX" value="$(arg markers_X)"/>
+        <param name="markersY" value="$(arg markers_Y)"/>
         <param name="cameraInfoTopic" value="$(arg camera_info_topic)"/>
         <param name="cameraImageTopic" value="$(arg camera_image_topic)"/>
         <param name="cameraEmitterParameter" value="$(arg camera_emitter_parameter)"/>
     </node>
     
     <!-- MAIN NODE -->    
-    <param name="radiusTrajectory" value="0.4"/>
+    <param name="radiusTrajectory" value="0.3"/>
     <param name="trajectoryStepsNumber" value="25"/> 
+    <param name="visibilityDistance" value="0.3"/>
+    <param name="visibilityRadius" value="0.1"/>
     <node pkg="robot_arm_3d_scan" type="robot_arm_3d_scan_calibration_node" name="robot_arm_3d_scan_calibration_node" output="screen" required="true"/>
 
     <!-- RVIZ -->	
     <node pkg="robot_arm_tools" type="robot_arm_tools_environment_node" name="robot_arm_tools_environment_node" output="screen">
-        <param name="environmentFileName" value="/home/demo1/Desktop/robot_arm_3d_scan/config/environments/OptiTrack_ur10e.yaml"/>    <!--TODO Default value ?-->
+        <param name="environmentFileName" value="$(find robot_arm_acoustic)/config/environments/GarteurAnechoicRoom.yaml"/>    <!--TODO Default value ?-->
     </node>
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find robot_arm_3d_scan)/config/3DScanSetup.rviz"/> 
+
+    <!-- ROSBAG -->
+    <!-- <node name="record_rosbag" pkg="rosbag" type="record" args='record -x "(.*)/compressed(.*)|(.*)/theora(.*)" -o /tmp/scan_$(arg tool_name)_$(arg calibration)' output="screen"/> -->
 
     <!-- SENSOR SETUP -->
     <!--<include file="$(find robot_arm_tools)/launch/Sensor.launch" pass_all_args="true">
         <arg name="sensor_type" value="point_cloud"/>
         <arg name="sensor_tf" value="camera_link"/>
-        <arg name="sensor_topic" value="/camera/depth/color/points"/>
+        <arg name="sensor_topic" value="/point_cloud"/>
     </include>-->
 
 </launch>
