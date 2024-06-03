@@ -2,7 +2,7 @@
 <launch>
 
     <!-- CALIBRATION PARAMETERS -->
-    <arg name="calibration_target_TF" value="handeye_target"/>
+    <param name="calibrationTargetTF" value="handeye_target"/>
 
     <!-- GENERAL ARGUMENTS -->
     <arg name="robot_name" default="panda"/>
@@ -23,14 +23,14 @@
         <arg name="calibration" value="$(arg calibration)"/>
 		<arg name="safety_distance" value="$(arg safety_distance)"/>
         <arg name="planner_name" value="RRTstar"/>
-        <arg name="planner_objective" value="MaximizeMinClearanceObjective"/>
-        <!--<arg name="kinematics_solver" value="bio_ik/BioIKKinematicsPlugin"/>-->
+        <arg name="kinematics_solver" value="bio_ik/BioIKKinematicsPlugin"/>
 	</include>
 
     <!-- TOOL ARGUMENTS -->
     <arg name="camera_name" default="infra1"/>
     <arg name="camera_info_topic" default="/$(arg camera_name)_camera_info"/>
     <arg name="camera_image_topic" default="/$(arg camera_name)"/>
+    <!--<arg name="camera_emitter_parameter" default=""/>-->
     <arg name="camera_emitter_parameter" default="/camera/stereo_module/emitter_enabled"/>
 
     <!-- TOOL SETUP -->

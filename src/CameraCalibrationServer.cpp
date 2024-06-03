@@ -28,7 +28,7 @@ CameraCalibrationServer::CameraCalibrationServer() : MeasurementServer(), m_tfLi
         ROS_WARN("Unable to retrieve robot base TF name, defaulting to world !");
         m_baseTF = "world";
     }
-    if (m_nodeHandle.getParam("cameraLinkName", m_cameraLinkTF))
+    if (!m_nodeHandle.getParam("cameraLinkName", m_cameraLinkTF))
     {
         ROS_WARN("Unable to retrieve camera link TF name, defaulting to camera_link !");
         m_cameraLinkTF = "camera_link";
@@ -77,7 +77,7 @@ CameraCalibrationServer::CameraCalibrationServer() : MeasurementServer(), m_tfLi
     privateNodeHandle.param<int>("markerBorder", m_markerBorder, 1);
     privateNodeHandle.param<double>("markerSizeReal", m_markerSizeReal, 0.2);
     privateNodeHandle.param<double>("markerSeparationReal", m_markerSeparationReal, 0.02);
-    privateNodeHandle.param<int>("targetDict", m_targetDict, 1);
+    privateNodeHandle.param<std::string>("targetDict", m_targetDict, "DICT_5X5_250");
 
     // Create camera target
     m_target = m_targetLoader.createInstance("HandEyeTarget/" + m_targetType);
@@ -183,6 +183,21 @@ CameraCalibrationServer::CameraCalibrationServer() : MeasurementServer(), m_tfLi
     boost::filesystem::ofstream{transformPath};
 
     // Get initial camera target location
+    
+    // Stop camera infrared emitter
+    if (m_cameraEmitterParameterName != "")
+    {
+        m_cameraEmitterClientSrv.request.config.ints[0].value = 0;
+        if (!m_cameraEmitterClient.call(m_cameraEmitterClientSrv))
+        {
+            ROS_WARN("Could not stop camera infrared emitter !");
+        }
+        else
+        {
+            ros::WallDuration(1.0).sleep();
+        }
+    }
+
     ROS_WARN("Getting initial camera target location...");
 
     double startTime = ros::WallTime::now().toSec();
@@ -206,6 +221,16 @@ CameraCalibrationServer::CameraCalibrationServer() : MeasurementServer(), m_tfLi
     {
         ROS_WARN("Could not retrieve target - camera sensor transform !");
         throw std::runtime_error("INVALID TRANSFORM");
+    }
+
+    // Restart camera infrared emitter
+    if (m_cameraEmitterParameterName != "")
+    {
+        m_cameraEmitterClientSrv.request.config.ints[0].value = 1;
+        if (!m_cameraEmitterClient.call(m_cameraEmitterClientSrv))
+        {
+            ROS_WARN("Could not start camera infrared emitter !");
+        }
     }
 }
 
@@ -279,6 +304,13 @@ bool CameraCalibrationServer::measure()
 
     // Fill storage file for flange - camera transform + reprojection error
     YAML::Node FlangeCameraTransformStorageFile = YAML::LoadFile(m_measurementServerStorageFolder + "FlangeCameraTransform.yaml");
+
+    if(m_measurementCounterServer == 0) //TODO Test : if(!FlangeCameraLinkTransformStorageFile["FlangeTF"] || !FlangeCameraLinkTransformStorageFile["CameraTF"])
+    {
+        FlangeCameraTransformStorageFile["FlangeTF"] = m_flangeTF;
+        FlangeCameraTransformStorageFile["CameraTF"] = m_cameraTF;
+    }
+
     FlangeCameraTransformStorageFile["FlangeCameraTransform_" + std::to_string(m_measurementServerCounter)]["x"] = m_FlangeCameraTransform.transform.translation.x;
     FlangeCameraTransformStorageFile["FlangeCameraTransform_" + std::to_string(m_measurementServerCounter)]["y"] = m_FlangeCameraTransform.transform.translation.y;
     FlangeCameraTransformStorageFile["FlangeCameraTransform_" + std::to_string(m_measurementServerCounter)]["z"] = m_FlangeCameraTransform.transform.translation.z;
@@ -316,6 +348,9 @@ bool CameraCalibrationServer::measure()
     Eigen::Isometry3d tmp;
     tf2::doTransform(m_CameraCameraLinkIsometry, tmp, m_FlangeCameraTransform);
     m_FlangeCameraLinkTransform = tf2::eigenToTransform(tmp);
+
+    FlangeCameraLinkTransformStorageFile["FlangeTF"] = m_flangeTF;
+    FlangeCameraLinkTransformStorageFile["CameraLinkTF"] = m_cameraLinkTF;
 
     FlangeCameraLinkTransformStorageFile["FlangeCameraLinkTransform"]["x"] = m_FlangeCameraLinkTransform.transform.translation.x;
     FlangeCameraLinkTransformStorageFile["FlangeCameraLinkTransform"]["y"] = m_FlangeCameraLinkTransform.transform.translation.y;

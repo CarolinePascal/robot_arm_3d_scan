@@ -93,7 +93,7 @@ private:
     int m_markersX, m_markersY;                           /*!< Number of markers along the X and Y axis */
     int m_markerSize, m_markerSeparation, m_markerBorder; /*!< Theoretical marker size, separation width and border width */
     double m_markerSizeReal, m_markerSeparationReal;      /*!< Real marker size and separation width */
-    int m_targetDict;                                     /*!< The dictionary used for the target markers */
+    std::string m_targetDict;                                     /*!< The dictionary used for the target markers */
 
     pluginlib::ClassLoader<moveit_handeye_calibration::HandEyeTargetBase> m_targetLoader;
     boost::shared_ptr<moveit_handeye_calibration::HandEyeTargetBase> m_target; /*!< The target used for calibration */
