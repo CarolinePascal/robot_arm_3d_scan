@@ -48,6 +48,9 @@ PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuf
         simplePointCloudFilter(pointCloud, true);
     }    
 
+    //TO REMOVE//
+    m_stereoModuleClient = m_nodeHandle.serviceClient<dynamic_reconfigure::Reconfigure>("/camera/stereo_module/set_parameters");
+    m_stereoModuleClient.waitForExistence();
 }
 
 bool PointCloudServer::measure()
@@ -59,7 +62,7 @@ bool PointCloudServer::measure()
     //Save raw point cloud
     if(m_measurementServerStorageFolder != "")
     {
-    pcl::fromROSMsg(*rawPointCloud, *pointCloud);
+        pcl::fromROSMsg(*rawPointCloud, *pointCloud);
         pcl::io::savePCDFileASCII(std::string(m_measurementServerStorageFolder + "RawPointCloud_default_" + std::to_string(m_measurementServerCounter) + ".pcd"), *pointCloud);
     }
 
@@ -75,6 +78,73 @@ bool PointCloudServer::measure()
         pcl::io::savePCDFileASCII(std::string(m_measurementServerStorageFolder + "PointCloud_default_" + std::to_string(m_measurementServerCounter) + ".pcd"), *pointCloud);
     }
     m_pointCloudPublisher.publish(*pointCloud);
+
+    //Change parameters (benchmark)
+    dynamic_reconfigure::Config stereoModuleConfig;
+    dynamic_reconfigure::IntParameter stereoModulePresetParam;
+
+    //Presets
+    //0 : Custom
+    //1 : Default
+    //2 : Hand
+    //3 : High Accuracy
+    //4 : High Density
+    //5 : Medium Density
+    //6 : Short Range (TODO)
+    std::vector<int> presets = {};
+    //std::vector<int> presets = {4,5,3};
+
+    //Disparity shifts
+    std::vector<int> disparityShifts = {};
+    //std::vector<int> disparityShifts = {50,25,0};
+
+    for(std::vector<int>::iterator it_vp = presets.begin(); it_vp != presets.end(); it_vp++)
+    {
+
+        //Change preset
+        stereoModuleConfig.ints.clear();
+        stereoModulePresetParam.name = "visual_preset";
+        stereoModulePresetParam.value = *it_vp;
+        stereoModuleConfig.ints.push_back(stereoModulePresetParam);
+
+        for(std::vector<int>::iterator it_ds = disparityShifts.begin(); it_ds != disparityShifts.end(); it_ds++)
+        {
+            //Change disparity shift
+            stereoModulePresetParam.name = "disparity_shift";
+            stereoModulePresetParam.value = *it_ds;
+            stereoModuleConfig.ints.push_back(stereoModulePresetParam);
+
+            m_stereoModuleClientService.request.config = stereoModuleConfig;
+
+            if (m_stereoModuleClient.call(m_stereoModuleClientService))
+            {
+                ROS_INFO("Stereo module parameters changed : visual_preset %d, disparity shift %d", *it_vp, *it_ds);
+
+                ros::WallDuration(0.5).sleep();
+
+                rawPointCloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/point_cloud");
+
+                //Save raw point cloud
+                if(m_measurementServerStorageFolder != "")
+                {
+                    pcl::fromROSMsg(*rawPointCloud, *pointCloud);
+                    pcl::io::savePCDFileASCII(std::string(m_measurementServerStorageFolder + "RawPointCloud_VP(" + std::to_string(*it_vp) + ")_DS(" + std::to_string(*it_ds) + ")_" + std::to_string(m_measurementServerCounter) + ".pcd"), *pointCloud);
+                }
+
+                //Filter out robot body (before PCL conversion !)
+                sensor_msgs::PointCloud2 cleanedPointCloud;
+                m_filterChain.update(*rawPointCloud,cleanedPointCloud);  
+                pcl::fromROSMsg(cleanedPointCloud, *pointCloud); 
+
+                //Filter point cloud and save it
+                simplePointCloudFilter(pointCloud);
+                if(m_measurementServerStorageFolder != "")
+                {
+                    pcl::io::savePCDFileASCII(std::string(m_measurementServerStorageFolder + "PointCloud_VP(" + std::to_string(*it_vp) + ")_DS(" + std::to_string(*it_ds) + ")_" + std::to_string(m_measurementServerCounter) + ".pcd"), *pointCloud);
+                }
+            }
+        }
+    }
 
     return(true);
 }
@@ -125,46 +195,46 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
 
     /*if(!initialisation)
     {
-    //TODO Some intelligent probabilities for epsilon
-    double epsilonX,epsilonY,epsilonZ;
-    epsilonX = 1.0;
-    epsilonY = 1.0;
-    epsilonZ = 0.0;
+        //TODO Some intelligent probabilities for epsilon
+        double epsilonX,epsilonY,epsilonZ;
+        epsilonX = 1.0;
+        epsilonY = 1.0;
+        epsilonZ = 0.0;
 
-    //Get current point cloud frame position
-    tf2::Transform transform;
-    try
-    {
-        tf2::fromMsg(m_tfBuffer.lookupTransform(m_pointCloudFrame, "world", ros::Time(0), ros::Duration(5.0)).transform, transform);
-    } 
-    catch (tf2::TransformException &ex) 
-    {
-        throw std::runtime_error("CANNOT RETRIVE SEEKED TRANSFORM !");
-    }      
+        //Get current point cloud frame position
+        tf2::Transform transform;
+        try
+        {
+            tf2::fromMsg(m_tfBuffer.lookupTransform(m_pointCloudFrame, "world", ros::Time(0), ros::Duration(5.0)).transform, transform);
+        } 
+        catch (tf2::TransformException &ex) 
+        {
+            throw std::runtime_error("CANNOT RETRIVE SEEKED TRANSFORM !");
+        }      
 
-    tf2::Matrix3x3 rotationMatrix = transform.getBasis();
+        tf2::Matrix3x3 rotationMatrix = transform.getBasis();
 
-    tf2::Vector3 delta;
-    delta.setX(centroid.x  - m_objectPose.position.x);
-    delta.setY(centroid.y  - m_objectPose.position.y);
-    delta.setZ(centroid.z  - m_objectPose.position.z);
-    
-    delta = rotationMatrix*delta;
+        tf2::Vector3 delta;
+        delta.setX(centroid.x  - m_objectPose.position.x);
+        delta.setY(centroid.y  - m_objectPose.position.y);
+        delta.setZ(centroid.z  - m_objectPose.position.z);
+        
+        delta = rotationMatrix*delta;
 
-    delta.setX(delta.x()*epsilonX);
-    delta.setY(delta.y()*epsilonY);
-    delta.setZ(delta.z()*epsilonZ);
+        delta.setX(delta.x()*epsilonX);
+        delta.setY(delta.y()*epsilonY);
+        delta.setZ(delta.z()*epsilonZ);
 
-    delta = rotationMatrix.inverse()*delta;
+        delta = rotationMatrix.inverse()*delta;
 
-    m_objectPose.position.x += delta.x();
-    m_objectPose.position.y += delta.y();
-    m_objectPose.position.z += delta.z();
+        m_objectPose.position.x += delta.x();
+        m_objectPose.position.y += delta.y();
+        m_objectPose.position.z += delta.z();
 
-    if(2*radius >= 0.75*m_objectSize)
-    {
-        m_objectSize = 2*radius;
-    }
+        if(2*radius >= 0.75*m_objectSize)
+        {
+            m_objectSize = 2*radius;
+        }
     }
     */
     if(initialisation)

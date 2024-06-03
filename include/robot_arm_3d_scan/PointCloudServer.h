@@ -20,6 +20,7 @@
 
 #include "filters/filter_chain.h"
 
+#include <dynamic_reconfigure/Reconfigure.h>
 
  /*! \class PointCloudServer
   * \brief Class used to trigger point cloud measurements
@@ -66,4 +67,7 @@ class PointCloudServer : public MeasurementServer
 
         filters::FilterChain<sensor_msgs::PointCloud2> m_filterChain;
 
+        //TO REMOVE//
+        ros::ServiceClient m_stereoModuleClient;
+        dynamic_reconfigure::Reconfigure m_stereoModuleClientService;   
 };

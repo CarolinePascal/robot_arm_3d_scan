@@ -152,8 +152,8 @@ add_executable(${PROJECT_NAME}_scan_node src/robot_arm_3d_scan_scan_node.cpp)
 add_executable(${PROJECT_NAME}_calibration_node src/robot_arm_3d_scan_calibration_node.cpp)
 
 add_executable(rtabmap_server src/RTABMAPServer.cpp)
-
 add_executable(point_cloud_server src/PointCloudServer.cpp)
+add_executable(camera_point_cloud_server src/CameraPointCloudServer.cpp)
 
 add_executable(camera_calibration_server src/CameraCalibrationServer.cpp)
 
@@ -181,6 +181,10 @@ target_link_libraries(rtabmap_server
 )
 
 target_link_libraries(point_cloud_server
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(camera_point_cloud_server
   ${catkin_LIBRARIES}
 )
 
