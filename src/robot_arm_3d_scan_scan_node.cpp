@@ -13,121 +13,117 @@
 
 #include "robot_arm_3d_scan/FloatParameters.h"
 
+#include <octomap_msgs/conversions.h>
+
 int main(int argc, char **argv)
 {
-    //ROS node initialisation
-    ros::init(argc, argv, "robot_arm_3d_scan_spheric_scan_node");  
+    // ROS node initialisation
+    ros::init(argc, argv, "robot_arm_3d_scan_spheric_scan_node");
     ros::AsyncSpinner spinner(0);
     spinner.start();
     ros::WallDuration(1.0).sleep();
 
-    //Robot initialisation TODO More generic approach
+    // Robot initialisation TODO More generic approach
     Robot robot;
     RobotVisualTools robotVisualTools;
 
-    //Move the robot to its initial configuration
+    // Move the robot to its initial configuration
     robot.setAcceleration(0.05);
     robot.setVelocity(0.1);
 
-    //Get the object radius, pose and the trajectory radius
-    std::vector<double> objectPoseArray;
-    double objectSize;
+    // Get the object radius, pose and the trajectory radius
     double radiusTrajectory;
     int trajectoryStepsNumber;
 
     ros::NodeHandle n;
-    if(!n.getParam("radiusTrajectory",radiusTrajectory))
+    if (!n.getParam("radiusTrajectory", radiusTrajectory))
     {
         ROS_ERROR("Unable to retrieve trajectory radius !");
         throw std::runtime_error("MISSING PARAMETER");
     }
 
-    if(!n.getParam("trajectoryStepsNumber",trajectoryStepsNumber))
+    if (!n.getParam("trajectoryStepsNumber", trajectoryStepsNumber))
     {
         ROS_ERROR("Unable to retrieve trajectory steps number !");
         throw std::runtime_error("MISSING PARAMETER");
     }
-    if(!n.getParam("objectPose",objectPoseArray))
+
+    // Create spherical scanning waypoints poses
+    std::vector<geometry_msgs::Pose> waypoints;
+
+    while(!n.hasParam("objectPose") && !n.hasParam("objectSize"))
     {
-        ROS_ERROR("Unable to retrieve measured object pose !");
-        throw std::runtime_error("MISSING PARAMETER");
-    }
-    if(!n.getParam("objectSize",objectSize))
-    {
-        ROS_ERROR("Unable to retrieve measured object size !");
-        throw std::runtime_error("MISSING PARAMETER");
+        ROS_WARN("Waiting for object pose and size parameters...");
+        ros::WallDuration(5.0).sleep();
     }
 
     geometry_msgs::Pose objectPose;
-    objectPose.position.x = objectPoseArray[0];
-    objectPose.position.y = objectPoseArray[1];
-    objectPose.position.z = objectPoseArray[2];
+    std::vector<double> objectPosition;
+    objectPosition = n.param<std::vector<double>>("objectPose", objectPosition);
+    objectPose.position.x = objectPosition[0];
+    objectPose.position.y = objectPosition[1];
+    objectPose.position.z = objectPosition[2];
 
-    //Create spherical scanning waypoints poses
-    std::vector<geometry_msgs::Pose> waypoints;
-    
-    //Initial measurement
-    if(robot.getToolName() == "cameraD435" || robot.getToolName() == "cameraD405")
+    double objectSize;
+    objectSize = n.param<double>("objectSize", objectSize);
+
+    // Main loop
+    // TODO Find a way to custom !!
+
+    //ANECHOIC ROOM
+    geometry_msgs::Pose supportPose = objectPose;
+    supportPose.position.z += 0.8;
+    robotVisualTools.addCylinder("support", supportPose, 0.02, 1.0, false, false);
+
+    //ANECHOIC ROOM
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI, 0, 2*M_PI, 1, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 + M_PI/3, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 + M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 - M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 - M_PI/4, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
+
+    //OPTITRACK ROOM
+    //sphericInclinationTrajectory(objectPose, radiusTrajectory, 0, 0, 2 * M_PI, 1, waypoints);
+    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI / 6, 0, 2 * M_PI, //trajectoryStepsNumber / 3, waypoints);
+    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI / 4, 0, 2 * M_PI, trajectoryStepsNumber / 3, waypoints);
+    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI / 3, 0, 2 * M_PI, trajectoryStepsNumber / 3, waypoints);
+
+    // TODO Online trajectory adaptation ?
+    robot.runMeasurementRoutine(waypoints, true, true, -1, true, false);
+
+    //Save final planning scene if perception was enabled
+    bool robotPerception = false;
+    if(n.getParam("robotPerception", robotPerception) && robotPerception)
     {
-        ros::ServiceClient thresholdClient = n.serviceClient<robot_arm_3d_scan::FloatParameters>("threshold_filter");
-        ros::ServiceClient disparityShiftClient = n.serviceClient<robot_arm_3d_scan::FloatParameters>("disparity_shift");
-    
-        robot_arm_3d_scan::FloatParameters thresholdSrv;
-        robot_arm_3d_scan::FloatParameters disparityShiftSrv;
+        std::shared_ptr<planning_scene::PlanningScene> planningScene = robot.getPlanningScene();
 
-        thresholdSrv.request.parameters = std::vector<double>{0.0,2*radiusTrajectory};
-        disparityShiftSrv.request.parameters = std::vector<double>{0.0};
+        octomap_msgs::OctomapWithPose rawOctomap;
+        bool output = planningScene->getOctomapMsg(rawOctomap);
 
-        if(thresholdClient.call(thresholdSrv) && disparityShiftClient.call(disparityShiftSrv))
+        if(!output)
         {
-            ROS_INFO("Initial measurement parameters set up...");
-        }    
+            ROS_WARN("Could not save planning scene octomap data !");
+        }
+        else
+        {
+            octomap_msgs::Octomap octomap = rawOctomap.octomap;
+            octomap::AbstractOcTree* abstractMap = octomap_msgs::msgToMap(octomap);
+
+            octomap::OcTree* map = (octomap::OcTree*)abstractMap;
+            octomap::OcTree tree = *map;
+
+            std::string storageFolder;
+            if(!n.getParam("measurementServerStorageFolder",storageFolder) || storageFolder == "")
+            {
+                ROS_WARN("No measurement server storage folder specified, switching to /tmp/Measurements/");
+                storageFolder = "/tmp/Measurements/";
+            }
+            tree.writeBinary(storageFolder + "Octomap.bt");
+        }       
     }
 
-    sphericInclinationTrajectory(objectPose, 1.5*radiusTrajectory, 0, 0, 2*M_PI, 1, waypoints);
-    robot.runMeasurementRoutine(waypoints,false,true,M_PI,false);
-
-    if(robot.getToolName() == "cameraD435" || robot.getToolName() == "cameraD405")
-    {
-        ros::ServiceClient thresholdClient = n.serviceClient<robot_arm_3d_scan::FloatParameters>("threshold_filter");
-        ros::ServiceClient disparityShiftClient = n.serviceClient<robot_arm_3d_scan::FloatParameters>("disparity_shift");
-    
-        robot_arm_3d_scan::FloatParameters thresholdSrv;
-        robot_arm_3d_scan::FloatParameters disparityShiftSrv;
-
-        thresholdSrv.request.parameters = std::vector<double>{0.0,radiusTrajectory};
-        disparityShiftSrv.request.parameters = std::vector<double>{5.0};
-
-        if(thresholdClient.call(thresholdSrv) && disparityShiftClient.call(disparityShiftSrv))
-        {
-            ROS_INFO("Main loop measurements parameters set up...");
-        }    
-    }
-
-    moveit_msgs::CollisionObject collisionSphere = robotVisualTools.getCollisionObject("collisionSphere");
-    
-    ROS_INFO("%f,%f,%f",objectPose.position.x,objectPose.position.y,objectPose.position.z);
-    objectPose = collisionSphere.primitive_poses[0];
-    ROS_INFO("%f,%f,%f",objectPose.position.x,objectPose.position.y,objectPose.position.z);
-    
-    //Main loop
-    waypoints.clear();
-     
-    //TODO Find a way to custom !!
-    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI, 0, 2*M_PI, 1, waypoints);
-    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 + M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints); 
-    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
-    //sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/2 - M_PI/6, 0, 2*M_PI, trajectoryStepsNumber, waypoints);
-    
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, 0, 0, 2*M_PI, 1, waypoints);
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/6, 0, 2*M_PI, trajectoryStepsNumber/3, waypoints);
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/4, 0, 2*M_PI, trajectoryStepsNumber/3, waypoints);
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI/3, 0, 2*M_PI, trajectoryStepsNumber/3, waypoints);
-
-    //TODO Online trajectory adaptation ?
-    robot.runMeasurementRoutine(waypoints,false,true,M_PI,false);
-
-    //Shut down ROS node 
+    // Shut down ROS node
     ros::shutdown();
     return 0;
 }
