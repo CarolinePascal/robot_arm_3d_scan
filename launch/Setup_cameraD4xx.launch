@@ -3,26 +3,42 @@
     
     <arg name="robot_name" default=""/>
     <arg name="tool_name" default=""/>
+    <arg name="hand_eye_calibration_file" default=""/>
+
+    <arg name="align_depth" default="false"/>
+    <arg name="compressed" default="false"/>
 
     <!-- GENERIC REMAP OF TOPICS NAMES -->
-    <remap from="/camera/color/image_raw"                       to="/color"/>
     <remap from="/camera/color/camera_info"                     to="/color_camera_info"/>
-    <remap from="/camera/aligned_depth_to_color/image_raw"      to="/depth"/>
-    <remap from="/camera/aligned_depth_to_color/camera_info"    to="/depth_camera_info"/>
+    <remap from="/camera/aligned_depth_to_color/camera_info"    to="/aligned_depth_camera_info"/>
+    <remap from="/camera/depth/camera_info"                     to="/depth_camera_info"/>
     <remap from="/camera/depth/color/points"                    to="/point_cloud"/>
-    <remap from="/camera/infra1/image_rect_raw"                 to="/infra1"/>
     <remap from="/camera/infra1/camera_info"                    to="/infra1_camera_info"/>
-    <remap from="/camera/infra2/image_rect_raw"                 to="/infra2"/>
     <remap from="/camera/infra2/camera_info"                    to="/infra2_camera_info"/>
 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 3.1415 -1.5708 0 $(arg robot_name)_cameraD435 camera_link" if="$(eval arg('tool_name') == 'cameraD435')"/>
-    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.009 -0.0037 3.1415 -1.5708 0 $(arg robot_name)_cameraD405 camera_link" if="$(eval arg('tool_name') == 'cameraD405')"/>
+    <remap from="/camera/color/image_raw"                   to="/color"/>
+    <remap from="/camera/aligned_depth_to_color/image_raw"  to="/aligned_depth"/>
+    <remap from="/camera/depth/image_rect_raw"              to="/depth"/>
+    <remap from="/camera/infra1/image_rect_raw"             to="/infra1"/>
+    <remap from="/camera/infra2/image_rect_raw"             to="/infra2"/>
 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 0 0 3.1415 -1.5708 0 world camera_link" if="$(eval arg('tool_name') == '' and arg('robot_name') == '')"/>
+    <!-- No hand-eye calibration -->
+    <group if="$(eval arg('hand_eye_calibration_file') == '')">
+        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.0175 -0.0042 3.1415 -1.5708 0 $(arg robot_name)_cameraD435 camera_link" if="$(eval arg('tool_name') == 'cameraD435')"/>
+        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 -0.009 -0.0037 3.1415 -1.5708 0 $(arg robot_name)_cameraD405 camera_link" if="$(eval arg('tool_name') == 'cameraD405')"/>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="camera_robot_link" args="0 0 0 3.1415 -1.5708 0 odom camera_link" if="$(eval arg('tool_name') == '' and arg('robot_name') == '')"/>
+    </group>
+
+    <!-- Hand-eye calibration -->
+    <group if="$(eval arg('hand_eye_calibration_file') != '')">
+        <node pkg="robot_arm_3d_scan" type="hand_eye_transform_publisher.py" name="camera_robot_link" args="$(arg hand_eye_calibration_file)" if="$(eval arg('tool_name') == '' and arg('robot_name') == '')" output="screen"/>
+
+        <node pkg="robot_arm_3d_scan" type="hand_eye_transform_publisher.py" name="camera_robot_link" args="$(arg hand_eye_calibration_file)" unless="$(eval arg('tool_name') == '' and arg('robot_name') == '')" output="screen"/>
+    </group>
 
     <!-- CAMERA SETUP -->
-    <!--<arg name="realsense_json_file_path" default="$(find robot_arm_3d_scan)/config/realsense/ShortRangePreset.json"/>-->
-    <arg name="realsense_json_file_path" default="$(find robot_arm_3d_scan)/config/realsense/MedDensityPreset.json"/>
+    <arg name="realsense_json_file_path" value="$(find robot_arm_3d_scan)/config/realsense/MedDensityPreset.json"/>
 
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
 
@@ -41,16 +57,44 @@
 
         <arg name="enable_pointcloud" value="true"/>
         <arg name="enable_sync" value="true"/>
-        <arg name="align_depth" value="true"/>  <!-- Remark : all frames will be transfered in the RGB viewport ! -->
+        <arg name="align_depth" value="$(arg align_depth)"/>  <!-- Remark : all frames will be transfered in the RGB viewport ! -->
 
         <arg name="json_file_path" value="$(arg realsense_json_file_path)"/>
 
         <!--<arg name="filters" value="decimation,disparity,spatial,temporal,disparity,hole_filling"/>-->
         <arg name="filters" value="decimation,disparity,spatial,temporal,disparity"/>
 
-        <arg name="clip_distance" value="1.0"/>
-        <arg name="disparity_shift" value="10"/>
-        <arg name="depth_units" value="0.0001"/>
-    </include>
+        <arg name="clip_distance" value="0.5"/>
+        <arg name="disparity_shift" value="0"/>   <!-- 0 for the D405 (not needed ?), 25-50 for the D435-->
+        <arg name="depth_units" value="0.0001"/>    <!--0.0001 for 10^-1 mm-->
 
+    </include>
+    <node type="dynparam" pkg="dynamic_reconfigure" name="set_temporal_filter" args="set /camera/temporal '{'filter_smooth_delta': 75, 'holes_fill': 4}'" output="screen"/>
+    <node type="dynparam" pkg="dynamic_reconfigure" name="set_laser_power" args="set /camera/stereo_module '{'laser_power': 250.0}'" output="screen"/>
+
+    <!-- ROSBAG -->
+    <arg name="rosbag_robot" default="false"/>
+    <arg name="rosbag_camera" default="false"/>
+    <arg name="rosbag_depth" default="false"/>
+    <arg name="rosbag_color" default="false"/>
+    <arg name="rosbag_infra1" default="false"/>
+    <arg name="rosbag_infra2" default="false"/>
+    <arg name="rosbag_path" default="/tmp/rosbag/depth_camera"/>
+
+    <arg name="topic_list_robot" value="/tf /tf_static /joint_states"/>
+
+    <arg name="topic_list_depth" value="/depth_camera_info /depth/compressedDepth /point_cloud"/>
+    <arg name="topic_list_aligned_depth" value="/aligned_depth/compressedDepth /aligned_depth_camera_info"/>
+    <arg name="topic_list_color" value="/color_camera_info /color/compressed /camera/extrinsics/depth_to_color"/>
+    <arg name="topic_list_infra1" value="/infra1_camera_info /infra1/compressed /camera/extrinsics/depth_to_infra1"/>
+    <arg name="topic_list_infra2" value="/infra2_camera_info /infra2/compressed /camera/extrinsics/depth_to_infra2"/>
+
+    <arg name="topic_list" value="$(eval (arg('topic_list_robot') + ' ')*arg('rosbag_robot') 
+                                    + (arg('topic_list_depth') + ' ')*(arg('rosbag_depth') and not arg('align_depth')) 
+                                    + (arg('topic_list_aligned_depth') + ' ')*(arg('rosbag_depth') and arg('align_depth')) 
+                                    + (arg('topic_list_color') + ' ')*arg('rosbag_color') 
+                                    + (arg('topic_list_infra1') + ' ')*arg('rosbag_infra1') 
+                                    + (arg('topic_list_infra2') + ' ')*arg('rosbag_infra2'))"/>
+
+    <node name="record_rosbag" pkg="robot_arm_3d_scan" type="rosbag_check_and_record.sh" args='"$(arg topic_list)" $(arg rosbag_path)' output="screen" unless="$(eval arg('topic_list') == '')"/>
 </launch>
