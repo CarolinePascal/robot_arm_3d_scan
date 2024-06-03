@@ -6,8 +6,11 @@
 
 int PointCloudServer::m_supportScanCounter = 0;
 
-PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuffer), m_groundRemoval(false)
+PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuffer), m_groundRemoval(false), m_filterChain("sensor_msgs::PointCloud2"), m_privateNodeHandle("~")
 {
+    //Configure robot body filter
+    m_filterChain.configure("cloud_filter_chain",m_privateNodeHandle);
+
     //Launch point cloud ROS publisher
     m_pointCloudPublisher = m_nodeHandle.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("/filtered_point_cloud",1);
 
@@ -15,10 +18,8 @@ PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuf
     sensor_msgs::PointCloud2ConstPtr rawPointCloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/point_cloud");
     m_pointCloudFrame = rawPointCloud->header.frame_id;
 
-    ros::NodeHandle n("~");
-    n.getParam("ground_removal",m_groundRemoval);
-
-    ROS_WARN("SERVER SETUP OK");
+    //Get ground removal parameter
+    m_privateNodeHandle.getParam("ground_removal",m_groundRemoval);
 
     try
     {
@@ -42,25 +43,11 @@ PointCloudServer::PointCloudServer() : MeasurementServer(), m_tfListener(m_tfBuf
     {
         //Get last published raw point cloud
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-        sensor_msgs::PointCloud2ConstPtr rawPointCloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/point_cloud");
         pcl::fromROSMsg(*rawPointCloud, *pointCloud);
 
-        //Filter obvious outliers
-        confidenceIntervalFilter(pointCloud,0.95);
+        simplePointCloudFilter(pointCloud, true);
+    }    
 
-        //Retrive point cloud data
-        pcl::PointXYZ centroid;
-        double radius;
-
-        boundingSphereFilter(pointCloud,centroid,radius);   
-
-        m_objectPose.position.x = centroid.x;
-        m_objectPose.position.y = centroid.y;
-        m_objectPose.position.z = centroid.z;
-        m_objectSize = 2*radius; 
-    }  
-
-    m_visualTools.addSphere("collisionSphere", m_objectPose, m_objectSize/2, false);    
 }
 
 bool PointCloudServer::measure()
@@ -68,22 +55,31 @@ bool PointCloudServer::measure()
     //Get last published raw point cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     sensor_msgs::PointCloud2ConstPtr rawPointCloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/point_cloud");
-    pcl::fromROSMsg(*rawPointCloud, *pointCloud);
 
-    m_measurementServerCounter++;
+    //Save raw point cloud
+    if(m_measurementServerStorageFolder != "")
+    {
+    pcl::fromROSMsg(*rawPointCloud, *pointCloud);
+        pcl::io::savePCDFileASCII(std::string(m_measurementServerStorageFolder + "RawPointCloud_default_" + std::to_string(m_measurementServerCounter) + ".pcd"), *pointCloud);
+    }
+
+    //Filter out robot body (before PCL conversion !)
+    sensor_msgs::PointCloud2 cleanedPointCloud;
+    m_filterChain.update(*rawPointCloud,cleanedPointCloud);  
+    pcl::fromROSMsg(cleanedPointCloud, *pointCloud); 
 
     //Filter point cloud, save it and publish it
     simplePointCloudFilter(pointCloud);
     if(m_measurementServerStorageFolder != "")
     {
-        pcl::io::savePCDFileASCII(std::string(m_measurementServerStorageFolder + "PointCloud_" + std::to_string(m_measurementServerCounter) + ".pcd"), *pointCloud);
+        pcl::io::savePCDFileASCII(std::string(m_measurementServerStorageFolder + "PointCloud_default_" + std::to_string(m_measurementServerCounter) + ".pcd"), *pointCloud);
     }
     m_pointCloudPublisher.publish(*pointCloud);
 
     return(true);
 }
 
-void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
+void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, bool initialisation)
 {
     transformPointCloud(pointCloud,"world");
     
@@ -114,11 +110,12 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
         }
     }
 
-    //Update new scanned object collision object
-    m_visualTools.deleteObject("collisionSphere");
+    //Downsample point cloud
+    voxelGridFilter(pointCloud,0.001);
 
-    //Filter obvious outliers
-    confidenceIntervalFilter(pointCloud,0.99);
+    //Filter outliers
+    radiusOutliersFilter(pointCloud,0.01,100);
+    //radiusOutliersFilter(pointCloud);
 
     //Retrive point cloud data
     pcl::PointXYZ centroid;
@@ -126,6 +123,8 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
 
     boundingSphereFilter(pointCloud,centroid,radius);   
 
+    /*if(!initialisation)
+    {
     //TODO Some intelligent probabilities for epsilon
     double epsilonX,epsilonY,epsilonZ;
     epsilonX = 1.0;
@@ -166,9 +165,20 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
     {
         m_objectSize = 2*radius;
     }
+    }
+    */
+    if(initialisation)
+    {
+        m_objectPose.position.x = centroid.x;
+        m_objectPose.position.y = centroid.y;
+        m_objectPose.position.z = centroid.z;
+        m_objectSize = 2*radius;
+        ROS_INFO("Object position : %f,%f,%f", m_objectPose.position.x, m_objectPose.position.y, m_objectPose.position.z);
+        ROS_INFO("Object size : %f", m_objectSize);
+    }
 
-    //TODO Add collisison volumes rather than sphere !
-    m_visualTools.addSphere("collisionSphere", m_objectPose, m_objectSize/2, false);
+    m_nodeHandle.setParam("objectPose", std::vector<double>{m_objectPose.position.x,m_objectPose.position.y,m_objectPose.position.z,0.0,0.0,0.0});
+    m_nodeHandle.setParam("objectSize", m_objectSize);
 }
 
 int main(int argc, char *argv[])

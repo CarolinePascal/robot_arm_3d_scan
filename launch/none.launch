@@ -6,5 +6,6 @@
     <param name="measurementServerName" value="/point_cloud_server"/>
     <node pkg="robot_arm_3d_scan" type="point_cloud_server" name="point_cloud_server" output="screen">
         <param name="ground_removal" value="$(arg ground_removal)"/>
+        <rosparam command="load" file="$(find robot_arm_3d_scan)/config/RobotBodyFilter.yaml" subst_value="true"/>
     </node>
 </launch>

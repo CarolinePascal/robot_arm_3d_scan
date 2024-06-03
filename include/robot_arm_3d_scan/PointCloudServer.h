@@ -18,6 +18,9 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
+#include "filters/filter_chain.h"
+
+
  /*! \class PointCloudServer
   * \brief Class used to trigger point cloud measurements
   */
@@ -39,7 +42,11 @@ class PointCloudServer : public MeasurementServer
          */
         bool measure();
 
-        void simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud);
+        void simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, bool initialisation = false);
+
+    protected:
+
+        ros::NodeHandle m_privateNodeHandle;
 
     private:
 
@@ -56,4 +63,7 @@ class PointCloudServer : public MeasurementServer
         bool m_groundRemoval;
         //TODO rename ?
         static int m_supportScanCounter;
+
+        filters::FilterChain<sensor_msgs::PointCloud2> m_filterChain;
+
 };
