@@ -1,0 +1,140 @@
+<launch> 
+
+    <arg name="point_cloud_topic" default="/point_cloud"/>
+
+    <arg name="pcd_to_point_cloud" default="false"/>
+    <arg name="input_pcd_path" default=""/>
+    <arg name="input_pcd_topic" default="/point_cloud"/>
+    <arg name="input_pcd_frame" default=""/>
+
+    <arg name="point_cloud_to_pcd" default="false"/>
+    <arg name="output_pcd_path" default=""/>
+    <arg name="output_pcd_topic" default="/point_cloud"/>
+    <arg name="output_pcd_frame" default=""/>
+
+    <arg name="crop_box_filter" default="false"/>
+    <arg name="crop_box_frame" default=""/>
+    <arg name="voxel_downsampling_filter" default="true"/>
+
+    <arg name="segmentation_filter" default="false"/>
+    <arg name="segmentation_model" default="0"/>    <!--c.f. http://docs.pointclouds.org/1.7.0/model__types_8h_source.html - `0` stands for pcl::SACMODEL_PLANE-->
+    <arg name="segmentation_distance_threshold" default="0.05"/>
+
+    <arg name="indices_extraction_filter" default="false"/>
+
+    <arg name="pass_through_filter" default="false"/>
+    <arg name="pass_through_frame" default=""/>
+
+    <arg name="statistical_outlier_filter" default="false"/>
+
+    <arg name="radius_outlier_filter" default="false"/>
+
+    <!-- Launch the nodelet manager -->
+    <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>  
+  
+    <!-- pcd_to_point_cloud : Reads a PCD file and publishes the point cloud to a desired topic.-->
+    <group if="$(arg pcd_to_point_cloud)">
+        <node name="pcd_to_point_cloud" pkg="pcl_ros" type="pcd_to_pointcloud" args="$(input_pcd_path)">
+            <remap from="cloud_pcd" to="$(arg input_pcd_topic)" />
+            <param name="frame_id" value="$(arg input_pcd_frame)" />
+        </node>
+    </group>
+
+    <!-- point_cloud_to_pcd : Writes a point cloud coming from a given topic to a PCD file.-->
+    <group if="$(arg point_cloud_to_pcd)">
+        <node name="point_cloud_to_pcd" pkg="pcl_ros" type="pointcloud_to_pcd" args="$(pcd_path)">
+            <remap from="~input" to="$(arg output_pcd_topic)" />
+            <param name="filename" value="$(arg output_pcd_path)"/>
+            <param name="fixed_frame" value="$(arg output_pcd_frame)"/>
+        </node>
+    </group>
+    
+    <!-- crop_box_filter : Crops the point cloud according to a box shape. The box shape values can be tuned using rqt_reconfigure.-->
+    <group if="$(arg crop_box_filter)">
+        <node pkg="nodelet" type="nodelet" name="crop_box_filter" args="load pcl/CropBox /pcl_manager" output="screen">
+            <remap from="~input" to="$(arg point_cloud_topic)"/>
+            <rosparam subst_value="true">
+                input_frame: $(arg crop_box_frame)
+                min_x: -0.5
+                max_x: 0.5
+                min_y: -0.5
+                max_y: 0.5
+                min_z: 0.0
+                max_z: 1.0
+            </rosparam>
+        </node>
+    </group>
+  
+    <!-- voxel_downsampling_filter : Produces a less dense point cloud using a voxel downsampling. The downsampling parameters can be tuned using rqt_reconfigure.-->
+    <group if="$(arg voxel_downsampling_filter)">
+        <node pkg="nodelet" type="nodelet" name="voxel_downsampling_filter" args="load pcl/VoxelGrid /pcl_manager" output="screen">
+            <remap from="~input" to="$(arg point_cloud_topic)"/>
+            <rosparam subst_value="true">
+                leaf_size: 0.01
+                filter_field_name: z
+                filter_limit_min: -10.0
+                filter_limit_max: 10.0
+            </rosparam>
+      </node>
+    </group>
+    
+    <!-- segmentation_filter : Extracts geometric shapes following a RANSAC segmentation procedure. -->
+    <group if="$(arg segmentation_filter)">
+        <node pkg="nodelet" type="nodelet" name="segmentation_filter" args="load pcl/SACSegmentation /pcl_manager" output="screen">
+            <remap from="~input" to="$(arg point_cloud_topic)"/>
+            <param name="model_type" value="$(arg segmentation_model)" type="int" />    
+            <param name="distance_threshold" value="$(arg segmentation_distance_threshold" type="double" />
+        </node>
+    </group>
+  
+    <!-- indices_extration_filter : Filters out given indices from the point cloud, providing an inlier and outlier point clouds. Needs to be combined with a segmentation filter ! -->
+    <group if="$(arg indices_extraction_filter)">
+        <node pkg="nodelet" type="nodelet" name="indices_extraction_filter_inliers" args="load pcl/ExtractIndices /pcl_manager" output="screen">
+            <remap from="~input" to="$(arg point_cloud_topic)"/>
+            <remap from="~indices" to="/segmentation_filter/inliers" />
+            <param name="approximate_sync" value="true" />
+        </node>
+        <node pkg="nodelet" type="nodelet" name="indices_extraction_filter_outlier" args="load pcl/ExtractIndices /pcl_manager" output="screen">
+            <remap from="~input" to="$(arg point_cloud_topic)"/>
+            <remap from="~indices" to="/segmentation_filter/inliers" />
+            <param name="negative" value="true" />
+            <param name="approximate_sync" value="true" />
+        </node>
+    </group>
+  
+    <!-- pass_through_filter : Applies a threshold filter on the point cloud. The threshold parameters can be tuned using rqt_reconfigure. -->
+    <group if="$(arg pass_through_filter)">
+        <node pkg="nodelet" type="nodelet" name="pass_through_filter" args="load pcl/PassThrough /pcl_manager" output="screen">
+            <remap from="~input" to="$(arg point_cloud_topic)"/>
+            <rosparam subst_value="true">
+                input_frame: $(arg pass_through_frame)
+                filter_field_name: y
+                filter_limit_min: -3.0
+                filter_limit_max: 0.0
+            </rosparam>
+        </node>
+    </group>
+  
+    <!-- statistical_outlier_filter : Applies a statistical outlier filter. The outlier parameters can be tuned using rqt_reconfigure. -->
+    <group if="$(arg statistical_outlier_filter)">
+        <node pkg="nodelet" type="nodelet" name="statistical_outlier_filter" args="load pcl/StatisticalOutlierRemoval /pcl_manager" output="screen">
+            <remap from="~input" to="$(arg point_cloud_topic)" />
+            <rosparam subst_value="true">
+                mean_k: 10
+                stddev: 0.01
+            </rosparam>
+        </node>
+    </group>
+  
+    <!-- radius_outlier_filter : Applies a radius outlier filter. The outlier parameters can be tuned using rqt_reconfigure. -->
+    <group if="$(arg radius_outlier_filter)">
+        <node pkg="nodelet" type="nodelet" name="radius_outlier_filter" args="load pcl/RadiusOutlierRemoval /pcl_manager" output="screen">
+            <remap from="~input" to="$(arg point_cloud_topic)" />
+            <rosparam subst_value="true">
+                radius_search: 0.01
+                min_neighbors: 10
+            </rosparam>
+        </node>
+    </group>
+
+</launch>
