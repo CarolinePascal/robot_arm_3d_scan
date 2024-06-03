@@ -85,19 +85,39 @@ int main(int argc, char **argv)
 
     // Create spherical scanning waypoints poses
     std::vector<geometry_msgs::Pose> waypoints;
-
-    // TODO Find a way to custom ?
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, 0, 0, 2 * M_PI, 1, waypoints);
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI / 8, 0, 2 * M_PI, trajectoryStepsNumber / 3, waypoints);
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI / 6, 0, 2 * M_PI, trajectoryStepsNumber / 3, waypoints);
-    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI / 4, 0, 2 * M_PI, trajectoryStepsNumber / 3, waypoints);
-
     double roll, pitch, yaw;
     matrix.getRPY(roll, pitch, yaw);
+
+    // TODO Find a way to custom ?
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, 0, 0, 2 * M_PI, 1, waypoints, true, -M_PI / 2);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI / 8, 0, 2 * M_PI, trajectoryStepsNumber, waypoints, true, -M_PI / 2);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI / 6, 0, 2 * M_PI, trajectoryStepsNumber, waypoints, true, -M_PI / 2);
+    sphericInclinationTrajectory(objectPose, radiusTrajectory, M_PI / 4, 0, 2 * M_PI, trajectoryStepsNumber, waypoints, true, -M_PI / 2);
+
+    sphericAzimuthTrajectory(objectPose, radiusTrajectory, 0, -M_PI / 4, M_PI / 4, trajectoryStepsNumber, waypoints, true, -M_PI / 2);
+    sphericAzimuthTrajectory(objectPose, radiusTrajectory, M_PI / 2, -M_PI / 4, M_PI / 4, trajectoryStepsNumber, waypoints, true, -M_PI / 2);
+
+    // Rotate trajectory around center object position
     rotateTrajectory(waypoints, objectPose.position, roll, pitch, yaw);
 
+    std::vector<geometry_msgs::Pose> waypointsUpShifted, waypointsDownShifted;
+    objectPose.position.x += Y[0] * 0.075;
+    objectPose.position.y += Y[1] * 0.075;
+    objectPose.position.z += Y[2] * 0.075;
+    sphericAzimuthTrajectory(objectPose, radiusTrajectory, 0, -M_PI / 4, M_PI / 4, trajectoryStepsNumber, waypointsUpShifted, true, -M_PI / 2);
+    rotateTrajectory(waypointsUpShifted, objectPose.position, roll, pitch, yaw);
+
+    objectPose.position.x -= Y[0] * 0.15;
+    objectPose.position.y -= Y[1] * 0.15;
+    objectPose.position.z -= Y[2] * 0.15;
+    sphericAzimuthTrajectory(objectPose, radiusTrajectory, 0, -M_PI / 4, M_PI / 4, trajectoryStepsNumber, waypointsDownShifted, true, -M_PI / 2);
+    rotateTrajectory(waypointsDownShifted, objectPose.position, roll, pitch, yaw);
+
+    waypoints.insert(waypoints.end(), waypointsUpShifted.begin(), waypointsUpShifted.end());
+    waypoints.insert(waypoints.end(), waypointsDownShifted.begin(), waypointsDownShifted.end());
+
     // TODO Online trajectory adaptation ?
-    robot.runMeasurementRoutine(waypoints, false, true, M_PI, false);
+    robot.runMeasurementRoutine(waypoints, false, true, -1, true);
 
     // Shut down ROS node
     ros::shutdown();
