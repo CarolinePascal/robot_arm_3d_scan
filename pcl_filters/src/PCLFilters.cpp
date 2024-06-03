@@ -170,23 +170,23 @@ void transformPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr pointCloud, std::st
     pointCloud->header.frame_id = targetTF;
 }
 
-void statisticalOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
+void statisticalOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, int meanK, double stdDevMulThresh)
 {
     //Statistical outliers removal => Remove points located outside the assumed gaussian repartition of the distance to its neighbours
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> statisticalFilter;
     statisticalFilter.setInputCloud(pointCloud);
-    statisticalFilter.setMeanK(50);
-    statisticalFilter.setStddevMulThresh(1.0);
+    statisticalFilter.setMeanK(meanK);
+    statisticalFilter.setStddevMulThresh(stdDevMulThresh);
     statisticalFilter.filter(*pointCloud);
 }
 
-void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud)
+void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double radius, int minNeighbors)
 {
     //Radius outliers removal => Remove points which do not have at least some number of neighbours within a certain range
     pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> radiusFilter;
     radiusFilter.setInputCloud(pointCloud);
-    radiusFilter.setRadiusSearch(0.01);
-    radiusFilter.setMinNeighborsInRadius(10);
+    radiusFilter.setRadiusSearch(radius);
+    radiusFilter.setMinNeighborsInRadius(minNeighbors);
     radiusFilter.setKeepOrganized(true);
     radiusFilter.filter(*pointCloud);
 }

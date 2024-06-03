@@ -48,13 +48,13 @@ void transformPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr pointCloud, std::st
  * \brief Applies a statistical outilers filter on a XYZRGB point cloud.
  * \param pointCloud Pointer on the point cloud to filter.
 */
-void statisticalOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud);
+void statisticalOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, int meanK=50, double stdDevMulThresh=1.0);
 
 /*!
  * \brief Applies a radius outliers filter on a XYZRGB point cloud.
  * \param pointCloud Pointer on the point cloud to filter.
 */
-void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud);
+void radiusOutliersFilter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, double radius=0.01, int minNeighbors=10);
 
 /*!
  * \brief Applies a downsampling filter on a XYZRGB point cloud.
