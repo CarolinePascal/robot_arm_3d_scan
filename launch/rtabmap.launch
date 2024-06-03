@@ -1,46 +1,63 @@
 <?xml version="1.0" ?>
 <launch>
 
+	<!-- GENERAL ARGUMENTS -->
+	<arg name="input_type" default="depth"/>
+
 	<!-- MEASUREMENT SERVER -->
 	<param name="measurementServerName" value="/rtabmap_server"/>
     <node pkg="robot_arm_3d_scan" type="RTABMAPServer" name="rtabmap_server" output="screen"/>
 
 	<!-- RTABMAP PROCESSING -->
-	<arg name="rgb_topic"         default="/rgb"/>
-	<arg name="depth_topic"       default="/depth"/>
-	<arg name="camera_info_topic" default="/camera_info"/>
+	<include file="$(find rtabmap_launch)/launch/rtabmap.launch">
 
-	<arg name="approx_sync"       default="false"/>
+		<arg name="rtabmap_viz"		value="true"/>
+		<arg name="use_sim_time"    value="true"/>
+		<arg name="database_path"	value="$(find robot_arm_3d_scan)/config/rtabmap/rtabmap.db"/>
+		<arg name="args" value="--delete_db_on_start"/> <!-- Delete database on start -->
 
-	<group ns="rtabmap">
-		<node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="screen" args="--delete_db_on_start">
-			<param name="frame_id"      type="string" value="world"/> <!--base frame of the arm-->
-			<param name="odom_frame_id" type="string" value="world"/> <!-- same as frame_id, as the base of the arm doesn t move -->
-			<param name="approx_sync"   type="bool"   value="$(arg approx_sync)"/>
+		<!-- Input topics are synchronized -->
+		<arg name="approx_sync"				value="false"/>
 
-			<remap from="rgb/image"       to="$(arg rgb_topic)"/>
-			<remap from="depth/image"     to="$(arg depth_topic)"/>
-			<remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
+		<arg name="stereo" 			value="false"/>
+		<arg name="depth" 			value="$(eval arg('input_type') == 'depth')"/>
 
-			<!-- RTAB-Map parameters -->
-			<param name="Rtabmap/DetectionRate"     type="double" value="1"/>     <!-- Hz -->
-			<param name="Kp/MaxFeatures"            type="double" value="-1"/>    <!-- Disable loop closure detection -->
-			<param name="RGBD/ProximityBySpace"     type="bool" value="false"/> <!-- Disable proximity detection -->
-			<param name="RGBD/AngularUpdate"        type="double" value="0.0"/>   <!-- Always add frames -->
-			<param name="RGBD/LinearUpdate"         type="double" value="0.0"/>   <!-- Always add frames -->
-			<param name="Grid/CellSize"				type="double" value="0.005"/>
-			<param name="Grid/NormalsSegmentation"	type="bool"	value="false"/>
-			<param name="Grid/MaxObstacleHeight"	type="double" value="0.2"/>
-			<param name="Grid/MaxGroundHeight"		type="double" value="0.035"/>
-			<param name="Grid/NoiseFilteringRadius"	type="double" value="0.01"/>
-			<param name="Grid/RangeMax"				type="double" value="0.4"/>
-			
-			<!-- Map parameters -->
-			<param name="~map_always_update"	type="bool" value="true"/>
-			<param name="~cloud_output_voxelized"	type="bool" value="true"/>
-			<!--<param name="Grid/VoxelSize"           type="string" value="0.001"/>-->	<!-- Voxelization of the cloud_map -->
+		<param name="rtabmap/map_always_update" type="bool" value="true"/>
 
-		</node>
-	</group>
+		<!-- RTABMAP frames -->
+		<arg name="frame_id"					value="camera_link"/> <!--Fixed base frame of the arm-->
+		<!--<arg name="odom_frame_id"			value="world"/>--> <!-- Same as frame_id, as the base of the arm doesn t move -->
+		
+		<!-- RTABMAP camera topics -->
+		<arg name="rgb_topic"       		value="/color"/>
+		<arg name="depth_topic"     		value="/aligned_depth"/>
+		<arg name="camera_info_topic" 		value="/color_camera_info"/>
+
+		<arg name="gen_cloud" value="true" 	if="$(eval arg('input_type') == 'depth')"/>
+		<arg name="gen_cloud" value="false" unless="$(eval arg('input_type') == 'depth')"/>
+
+		<arg name="subscribe_scan_cloud"    value="true"/>
+		<arg name="scan_cloud_topic"        value="/scan_cloud" if="$(eval arg('input_type') == 'depth')"/>
+		<arg name="scan_cloud_topic"        value="/point_cloud" if="$(eval arg('input_type') == 'point_cloud')"/>
+		<arg name="gen_cloud_decimation"    value="0"/>
+		<arg name="gen_cloud_voxel"         value="0"/>
+
+		<arg name="visual_odometry"         value="true"	if="$(eval arg('input_type') == 'depth')"/>
+		<arg name="visual_odometry"         value="false"	unless="$(eval arg('input_type') == 'depth')"/>
+
+		<arg name="icp_odometry"            value="true" 	if="$(eval arg('input_type') == 'point_cloud')"/>
+		<arg name="icp_odometry"            value="false"	unless="$(eval arg('input_type') == 'point_cloud')"/>
+
+		<arg name="scan_cloud_assembling"              			value="true"/>
+		<arg name="scan_cloud_assembling_fixed_frame"  			value=""/>
+		<arg name="scan_cloud_assembling_voxel_size"   			default="0.0"/>
+		<arg name="scan_cloud_assembling_range_min"    			default="0.0"/>
+		<arg name="scan_cloud_assembling_range_max"    			default="0.0"/>
+		<arg name="scan_cloud_assembling_noise_radius"   		default="0.0"/>
+		<arg name="scan_cloud_assembling_noise_min_neighbors"   default="0"/>
+
+		<!-- RTABMAP default parameters -->
+		<arg name="cfg" value="$(find robot_arm_3d_scan)/config/rtabmap/rtabmap.ini"/>
+	</include>
 
 </launch>
