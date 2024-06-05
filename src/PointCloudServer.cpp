@@ -111,7 +111,7 @@ void PointCloudServer::simplePointCloudFilter(pcl::PointCloud<pcl::PointXYZRGB>:
     }
 
     //Downsample point cloud
-    voxelGridFilter(pointCloud,0.001);
+    downsampleFilter(pointCloud,0.001,0.001,0.001);
 
     //Filter outliers
     radiusOutliersFilter(pointCloud,0.01,100);
